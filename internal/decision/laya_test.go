@@ -31,6 +31,12 @@ func TestDecide_HeuristicRouter(t *testing.T) {
 		{"Poetry and narrative plot about Norse mythology Surtr", "literature"},
 		{"Fine-tuning BGE-M3 embedding model with RAG retrieval", "ai"},
 		{"Random notes about today's grocery list", "general"},
+		// Multilingual Persian tests
+		{"تنظیم کامپوزیتور Niri در لینوکس نیکس", "system"},
+		{"استراتژی نقدینگی و حد ضرر در بازار فارکس", "forex"},
+		{"داستان و رمان اسطوره‌شناسی درباره سرتر", "literature"},
+		{"پیاده‌سازی مدل زبانی و امبدینگ هوش مصنوعی", "ai"},
+		{"مدیریت سبد خرید و ارسال سفارش فروشگاه", "ecommerce"},
 	}
 
 	for _, tt := range tests {
@@ -63,8 +69,11 @@ func TestDecide_HeuristicTriage(t *testing.T) {
 		expectedNoise    bool
 	}{
 		{"ping", "noise", true},
+		{"سلام", "noise", true},
 		{"User prefers dark mode and Neovim", "preference", false},
+		{"کاربر ترجیح می‌دهد از تم تاریک استفاده کند", "preference", false},
 		{"We found that restarting pipewire fixed the sound issue", "insight", false},
+		{"مشخص شد با ری‌استارت پایپ‌وایر صدا وصل شد", "insight", false},
 		{"command returned error: exit code 1", "tool_result", false},
 		{"Standard note about current context", "observation", false},
 	}
@@ -85,6 +94,66 @@ func TestDecide_HeuristicTriage(t *testing.T) {
 				t.Errorf("expected positive importance, got %.2f", imp)
 			}
 		})
+	}
+}
+
+func TestDecideConflict(t *testing.T) {
+	cfg := &config.Config{
+		LayaURL:       "",
+		LayaBinPath:   "",
+		LayaModelPath: "",
+	}
+	engine := NewEngine(cfg)
+	ctx := context.Background()
+
+	// Contradictory pairs
+	tests := []struct {
+		f1         string
+		f2         string
+		contradict bool
+	}{
+		{"theme: dark mode", "theme: light mode", true},
+		{"trend is bullish", "trend is bearish", true},
+		{"service is active", "service is inactive", true},
+		{"سیستم روشن است", "سیستم خاموش است", true},
+		{"User uses Niri", "User uses Niri", false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.f1+"_vs_"+tc.f2, func(t *testing.T) {
+			contradicts, conf, err := engine.DecideConflict(ctx, tc.f1, tc.f2)
+			if err != nil {
+				t.Fatalf("DecideConflict error: %v", err)
+			}
+			if contradicts != tc.contradict {
+				t.Errorf("DecideConflict(%q, %q) = %v; want %v (conf %.2f)", tc.f1, tc.f2, contradicts, tc.contradict, conf)
+			}
+		})
+	}
+}
+
+func TestReflect(t *testing.T) {
+	cfg := &config.Config{
+		LayaURL:       "",
+		LayaBinPath:   "",
+		LayaModelPath: "",
+	}
+	engine := NewEngine(cfg)
+	ctx := context.Background()
+
+	res, err := engine.Reflect(ctx, "Active working blocks on NixOS and Niri compositor with Pipewire audio")
+	if err != nil {
+		t.Fatalf("Reflect failed: %v", err)
+	}
+
+	if res["cognitive_status"] != "optimal" {
+		t.Errorf("expected optimal cognitive status, got %v", res["cognitive_status"])
+	}
+	if res["focus"] == "" {
+		t.Errorf("expected focus to be non-empty")
+	}
+	if recs, ok := res["recommendations"].([]string); !ok || len(recs) == 0 {
+		t.Errorf("expected non-empty recommendations: %v", res["recommendations"])
 	}
 }
 

@@ -78,3 +78,23 @@ func TestSerializeDeserializeEmbedding(t *testing.T) {
 		t.Fatal("expected error for corrupted byte length, got nil")
 	}
 }
+
+func TestBuiltinVectorizer_DotProductEqualsCosineSimilarity(t *testing.T) {
+	v := NewBuiltinVectorizer()
+	vec1 := v.Vectorize("نرم‌افزار مدیریت حافظه برای هوش مصنوعی")
+	vec2 := v.Vectorize("سامانه شناختی حافظه دائمی هوش مصنوعی")
+
+	// Calculate cosine similarity via CosineSimilarity
+	cosSim := CosineSimilarity(vec1, vec2)
+
+	// Calculate direct dot product
+	var dot float32
+	for i := 0; i < len(vec1); i++ {
+		dot += vec1[i] * vec2[i]
+	}
+
+	diff := math.Abs(float64(cosSim - dot))
+	if diff > 1e-5 {
+		t.Fatalf("expected dot product (%f) to equal cosine similarity (%f), diff %e", dot, cosSim, diff)
+	}
+}

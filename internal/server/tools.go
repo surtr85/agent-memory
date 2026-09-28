@@ -167,6 +167,15 @@ func (s *Server) registerTools() {
 		),
 		s.handleDecision,
 	)
+
+	// 17. memory_reflect (args: context)
+	s.MCPServer.AddTool(
+		mcp.NewTool("memory_reflect",
+			mcp.WithDescription("Runs Laya System-1 cognitive appraisal of current memory blocks, observations, or goals."),
+			mcp.WithString("context", mcp.Description("Optional situational context or memory state snapshot to reflect upon")),
+		),
+		s.handleReflect,
+	)
 }
 
 // 1. handleGetBootstrap
@@ -560,3 +569,33 @@ func (s *Server) handleDecision(ctx context.Context, req mcp.CallToolRequest) (*
 	}
 	return mcp.NewToolResultText(string(jsonBytes)), nil
 }
+
+// 17. handleReflect
+func (s *Server) handleReflect(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if s.Decision == nil {
+		return mcp.NewToolResultError("decision engine is not initialized"), nil
+	}
+
+	memContext := req.GetString("context", "")
+	if memContext == "" {
+		// Bootstrap working memory snapshot if context not explicitly provided
+		prompt, err := s.Blocks.GetBootstrapPrompt()
+		if err == nil && prompt != "" {
+			memContext = prompt
+		} else {
+			memContext = "Agent idle, core blocks nominal"
+		}
+	}
+
+	res, err := s.Decision.Reflect(ctx, memContext)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("reflection error: %v", err)), nil
+	}
+
+	jsonBytes, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("json marshal error: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(jsonBytes)), nil
+}
+

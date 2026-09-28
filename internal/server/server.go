@@ -32,14 +32,15 @@ func NewServer(db *sql.DB, cfg *config.Config) *Server {
 		server.WithDescription("AgentMemory Universal (v3.0) Cognitive Engine - Pure Go Local Memory"),
 	)
 
-	embClient := embedding.NewHTTPClient(cfg.EmbeddingURL, cfg.OllamaURL, "bge-m3", 1024)
+	// Default to Pure Go Builtin Semantic Vectorizer
+	embClient := embedding.NewBuiltinVectorizer()
 	decEngine := decision.NewEngine(cfg)
 	s := &Server{
 		MCPServer: mcpServer,
 		DB:        db,
 		Config:    cfg,
 		Blocks:    blocks.NewManager(db),
-		Temporal:  temporal.NewRegistry(db),
+		Temporal:  temporal.NewRegistry(db).WithDecision(decEngine),
 		Searcher:  retrieval.NewSearcher(db, embClient),
 		Embedding: embClient,
 		Decision:  decEngine,

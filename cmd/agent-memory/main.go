@@ -38,6 +38,7 @@ Usage:
   agent-memory block set <label> <content>
   agent-memory block list
   agent-memory ingest <file_or_dir> [--ns <ns>]
+  agent-memory reflect [context]                 System-1 cognitive appraisal of memory blocks & goals
   agent-memory stats                             Show namespace & entity breakdown
   agent-memory health                            Show database health & record counts
   agent-memory version                           Show version
@@ -131,7 +132,7 @@ func main() {
 
 		database := initDB(cfg)
 		defer database.Close()
-		embClient := embedding.NewHTTPClient(cfg.EmbeddingURL, cfg.OllamaURL, "bge-m3", 1024)
+		embClient := embedding.NewBuiltinVectorizer()
 		searcher := retrieval.NewSearcher(database, embClient)
 
 		results, err := searcher.Search(context.Background(), query, ns, topK, historical)
@@ -298,7 +299,7 @@ func main() {
 
 		database := initDB(cfg)
 		defer database.Close()
-		embClient := embedding.NewHTTPClient(cfg.EmbeddingURL, cfg.OllamaURL, "bge-m3", 1024)
+		embClient := embedding.NewBuiltinVectorizer()
 
 		info, err := os.Stat(targetPath)
 		if err != nil {
@@ -405,14 +406,44 @@ func main() {
 		_ = database.QueryRow("SELECT COUNT(*) FROM entities").Scan(&entitiesCount)
 		_ = database.QueryRow("SELECT COUNT(*) FROM observations").Scan(&obsCount)
 
-		fmt.Println("Status:        HEALTHY")
-		fmt.Println("Engine:        modernc.org/sqlite (Pure Go, Zero CGO, WAL mode)")
-		fmt.Printf("Database Path: %s\n", cfg.DBPath)
-		fmt.Printf("Core Blocks:   %d\n", blocksCount)
-		fmt.Printf("Atomic Facts:  %d\n", factsCount)
-		fmt.Printf("Chunks:        %d\n", chunksCount)
-		fmt.Printf("Entities:      %d\n", entitiesCount)
-		fmt.Printf("Observations:  %d\n", obsCount)
+		fmt.Println("Status:          HEALTHY")
+		fmt.Println("Database Engine: modernc.org/sqlite (Pure Go, Zero CGO, WAL mode)")
+		fmt.Printf("Database Path:   %s\n", cfg.DBPath)
+		fmt.Println("Vectorizer:      Pure Go BuiltinVectorizer (256-d subword n-gram multi-hash, zero external daemon)")
+		fmt.Println("Decision Engine: Laya System-1 / Jev AI (Multilingual System-1 Appraisal, Router, Triage)")
+		fmt.Printf("Core Blocks:     %d\n", blocksCount)
+		fmt.Printf("Atomic Facts:    %d\n", factsCount)
+		fmt.Printf("Chunks:          %d\n", chunksCount)
+		fmt.Printf("Entities:        %d\n", entitiesCount)
+		fmt.Printf("Observations:    %d\n", obsCount)
+
+	case "reflect":
+		database := initDB(cfg)
+		defer database.Close()
+
+		memContext := ""
+		if len(os.Args) >= 3 {
+			memContext = strings.Join(os.Args[2:], " ")
+		} else {
+			bm := blocks.NewManager(database)
+			prompt, err := bm.GetBootstrapPrompt()
+			if err == nil && prompt != "" {
+				memContext = prompt
+			}
+		}
+
+		decEngine := decision.NewEngine(cfg)
+		res, err := decEngine.Reflect(context.Background(), memContext)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Reflection error: %v\n", err)
+			os.Exit(1)
+		}
+		jsonBytes, err := json.MarshalIndent(res, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "JSON marshal error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println(string(jsonBytes))
 
 	case "route":
 		if len(os.Args) < 3 {

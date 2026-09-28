@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/surtr85/agent-memory/internal/config"
+	"github.com/surtr85/agent-memory/internal/normalizer"
 )
 
 // Engine manages Laya System-1 / Jev AI decision engine integration with fallbacks.
@@ -199,9 +200,44 @@ func (e *Engine) TriageObservation(ctx context.Context, content string) (string,
 	return category, isNoise, importance, nil
 }
 
+// DecideConflict evaluates if two statements or fact values contradict each other.
+func (e *Engine) DecideConflict(ctx context.Context, existingFact, newFact string) (bool, float64, error) {
+	state := fmt.Sprintf("Fact 1: %s\nFact 2: %s", existingFact, newFact)
+	res, err := e.Decide(ctx, state, "conflict")
+	if err != nil {
+		return false, 0.5, err
+	}
+
+	isContradiction := false
+	confidence := 0.80
+
+	if val, ok := res["is_contradiction"].(bool); ok {
+		isContradiction = val
+	} else if val, ok := res["conflict"].(bool); ok {
+		isContradiction = val
+	} else if val, ok := res["contradiction"].(bool); ok {
+		isContradiction = val
+	}
+
+	if val, ok := res["confidence"].(float64); ok {
+		confidence = val
+	}
+
+	return isContradiction, confidence, nil
+}
+
+// Reflect runs System-1 cognitive appraisal of current memory blocks, observations, or goals.
+func (e *Engine) Reflect(ctx context.Context, memoryState string) (map[string]any, error) {
+	if strings.TrimSpace(memoryState) == "" {
+		memoryState = "current agent status: idle"
+	}
+	return e.Decide(ctx, memoryState, "reflect")
+}
+
 // decideHeuristic provides deterministic fallback when HTTP and CLI are unavailable.
 func (e *Engine) decideHeuristic(state string, preset string) (map[string]any, error) {
-	lower := strings.ToLower(state)
+	norm := normalizer.Normalize(state)
+	lower := strings.ToLower(norm)
 
 	switch preset {
 	case "router":
@@ -219,6 +255,26 @@ func (e *Engine) decideHeuristic(state string, preset string) (map[string]any, e
 			"is_noise":   noise,
 			"importance": imp,
 			"source":     "heuristic",
+		}, nil
+
+	case "conflict":
+		contradicts, conf := classifyConflict(lower)
+		return map[string]any{
+			"is_contradiction": contradicts,
+			"conflict":         contradicts,
+			"confidence":       conf,
+			"source":           "heuristic",
+		}, nil
+
+	case "reflect":
+		status := appraisalMemoryState(lower, state)
+		return map[string]any{
+			"cognitive_status": status["status"],
+			"focus":            status["focus"],
+			"alert_level":      status["alert_level"],
+			"recommendations":  status["recommendations"],
+			"timestamp":        time.Now().UTC().Format(time.RFC3339),
+			"source":           "heuristic",
 		}, nil
 
 	default:
@@ -241,12 +297,13 @@ func containsWord(text, word string) bool {
 
 func matchesAny(text string, keywords []string) bool {
 	for _, kw := range keywords {
-		if strings.Contains(kw, " ") {
-			if strings.Contains(text, kw) {
+		kwNorm := strings.ToLower(normalizer.Normalize(kw))
+		if strings.Contains(kwNorm, " ") {
+			if strings.Contains(text, kwNorm) {
 				return true
 			}
 		} else {
-			if containsWord(text, kw) {
+			if containsWord(text, kwNorm) || strings.Contains(text, kwNorm) {
 				return true
 			}
 		}
@@ -255,48 +312,53 @@ func matchesAny(text string, keywords []string) bool {
 }
 
 func classifyNamespace(text string) (string, float64) {
-	// Literature / Fiction / Lore / Creative
+	// Literature / Fiction / Lore / Creative (Multilingual Persian & English)
 	literatureKeywords := []string{
 		"literature", "novel", "poetry", "poem", "fiction", "character", "prose",
 		"story", "plot", "surtr", "mythology", "narrative", "chapter", "book",
+		"شعر", "ادبیات", "رمان", "داستان", "اسطوره‌شناسی", "روایت", "نویسندگی",
 	}
 	if matchesAny(text, literatureKeywords) {
 		return "literature", 0.90
 	}
 
-	// Forex / Trading
+	// Forex / Trading (Multilingual Persian & English)
 	forexKeywords := []string{
 		"forex", "trading", "eurusd", "gbpusd", "usdjpy", "pip", "pips", "lot", "lots", "leverage",
 		"metatrader", "mt4", "mt5", "candlestick", "stop loss", "take profit",
 		"currency", "market structure", "liquidity", "order block", "ict", "smc",
+		"فارکس", "معاملات", "ارز دیجیتال", "نقدینگی", "کندل", "حد ضرر", "حد سود", "تحلیل تکنیکال",
 	}
 	if matchesAny(text, forexKeywords) {
 		return "forex", 0.92
 	}
 
-	// System / OS / Compositors / Linux
+	// System / OS / Compositors / Linux (Multilingual Persian & English)
 	systemKeywords := []string{
 		"nixos", "nix", "linux", "systemd", "kernel", "wayland", "niri", "sway", "hyprland",
 		"pipewire", "configuration.nix", "flake", "compositor", "desktop", "x11", "xorg",
 		"memory.db", "agent-memory", "system", "bash", "zsh", "dotfiles",
+		"لینوکس", "نیکس", "کامپوزیتور", "میزکار", "هسته", "پایپ‌وایر",
 	}
 	if matchesAny(text, systemKeywords) {
 		return "system", 0.95
 	}
 
-	// Ecommerce
+	// Ecommerce (Multilingual Persian & English)
 	ecommerceKeywords := []string{
 		"ecommerce", "e-commerce", "shopify", "woocommerce", "product", "cart",
 		"checkout", "inventory", "shipping", "sku", "payment gateway", "order fulfillment",
+		"فروشگاه", "سبد خرید", "موجودی", "سفارش", "پرداخت", "ارسال", "محصول",
 	}
 	if matchesAny(text, ecommerceKeywords) {
 		return "ecommerce", 0.90
 	}
 
-	// AI / Machine Learning / LLMs
+	// AI / Machine Learning / LLMs (Multilingual Persian & English)
 	aiKeywords := []string{
 		"ai", "llm", "embedding", "rag", "retrieval", "prompt", "transformer",
 		"gpt", "claude", "ollama", "neural", "bge-m3", "fine-tuning", "vector",
+		"هوش مصنوعی", "مدل زبانی", "امبدینگ", "بردار", "بازیابی", "ترانسفورمر",
 	}
 	if matchesAny(text, aiKeywords) {
 		return "ai", 0.90
@@ -307,7 +369,10 @@ func classifyNamespace(text string) (string, float64) {
 
 func classifyTriage(text string) (string, bool, float64) {
 	// Noise detection
-	noiseKeywords := []string{"ping", "ok", "test", "hello", "hi", "bye", "thanks", "done"}
+	noiseKeywords := []string{
+		"ping", "ok", "test", "hello", "hi", "bye", "thanks", "done",
+		"سلام", "مرسی", "ممنون", "تست", "خداحافظ",
+	}
 	trimmed := strings.TrimSpace(text)
 	for _, kw := range noiseKeywords {
 		if trimmed == kw {
@@ -316,7 +381,10 @@ func classifyTriage(text string) (string, bool, float64) {
 	}
 
 	// Preference
-	preferenceKeywords := []string{"prefer", "likes", "dislikes", "favorite", "always use", "never use", "wants"}
+	preferenceKeywords := []string{
+		"prefer", "likes", "dislikes", "favorite", "always use", "never use", "wants",
+		"ترجیح می‌دهد", "علاقه‌مند", "دوست دارد", "همیشه", "هرگز",
+	}
 	for _, kw := range preferenceKeywords {
 		if strings.Contains(text, kw) {
 			return "preference", false, 0.95
@@ -324,7 +392,10 @@ func classifyTriage(text string) (string, bool, float64) {
 	}
 
 	// Insight / Fact
-	insightKeywords := []string{"found that", "learned", "insight", "solution", "fixed by", "root cause"}
+	insightKeywords := []string{
+		"found that", "learned", "insight", "solution", "fixed by", "root cause",
+		"مشخص شد", "راه حل", "برطرف شد", "علت اصلی", "کشف شد",
+	}
 	for _, kw := range insightKeywords {
 		if strings.Contains(text, kw) {
 			return "insight", false, 0.88
@@ -332,7 +403,7 @@ func classifyTriage(text string) (string, bool, float64) {
 	}
 
 	// Tool Result
-	toolKeywords := []string{"output:", "exit code", "error:", "returned", "stderr", "stdout"}
+	toolKeywords := []string{"output:", "exit code", "error:", "returned", "stderr", "stdout", "خروجی:", "خطا:"}
 	for _, kw := range toolKeywords {
 		if strings.Contains(text, kw) {
 			return "tool_result", false, 0.75
@@ -340,4 +411,108 @@ func classifyTriage(text string) (string, bool, float64) {
 	}
 
 	return "observation", false, 0.60
+}
+
+// classifyConflict checks if statements have contradictory values or negation patterns.
+func classifyConflict(text string) (bool, float64) {
+	parts := strings.Split(text, "\n")
+	if len(parts) >= 2 {
+		f1 := strings.TrimPrefix(strings.TrimSpace(parts[0]), "fact 1:")
+		f2 := strings.TrimPrefix(strings.TrimSpace(parts[1]), "fact 2:")
+		f1 = strings.TrimSpace(f1)
+		f2 = strings.TrimSpace(f2)
+
+		// Direct identical statements
+		if f1 == f2 {
+			return false, 0.99
+		}
+
+		// Mutually exclusive antonyms / values
+		antonymPairs := [][2]string{
+			{"true", "false"},
+			{"enabled", "disabled"},
+			{"on", "off"},
+			{"active", "inactive"},
+			{"yes", "no"},
+			{"bullish", "bearish"},
+			{"dark", "light"},
+			{"خاموش", "روشن"},
+			{"فعال", "غیرفعال"},
+			{"درست", "نادرست"},
+			{"صعودی", "نزولی"},
+		}
+
+		for _, pair := range antonymPairs {
+			hasFirst1 := strings.Contains(f1, pair[0])
+			hasSecond1 := strings.Contains(f1, pair[1])
+			hasFirst2 := strings.Contains(f2, pair[0])
+			hasSecond2 := strings.Contains(f2, pair[1])
+
+			if (hasFirst1 && hasSecond2) || (hasSecond1 && hasFirst2) {
+				return true, 0.95
+			}
+		}
+
+		// Direct negation check: one has "not", "never", "نیست", "نباید" while other doesn't
+		negations := []string{" not ", " never ", " doesn't ", " cannot ", " نیست ", " نباشد ", " غیر "}
+		hasNeg1 := false
+		for _, neg := range negations {
+			if strings.Contains(" "+f1+" ", neg) {
+				hasNeg1 = true
+				break
+			}
+		}
+		hasNeg2 := false
+		for _, neg := range negations {
+			if strings.Contains(" "+f2+" ", neg) {
+				hasNeg2 = true
+				break
+			}
+		}
+		if hasNeg1 != hasNeg2 {
+			// One is negated while the other is affirmative
+			return true, 0.88
+		}
+
+		// If statements talk about same attribute/property with different explicit values
+		if f1 != f2 && len(f1) > 0 && len(f2) > 0 {
+			// e.g. "port: 8080" vs "port: 9090", "editor: vim" vs "editor: emacs"
+			return true, 0.75
+		}
+	}
+
+	return false, 0.50
+}
+
+func appraisalMemoryState(lowerText, rawText string) map[string]any {
+	focus := "general operations"
+	alertLevel := "nominal"
+	var recommendations []string
+
+	if strings.Contains(lowerText, "error") || strings.Contains(lowerText, "fail") || strings.Contains(lowerText, "خطا") {
+		alertLevel = "elevated"
+		focus = "troubleshooting and error resolution"
+		recommendations = append(recommendations, "Inspect failing services and review recent logs")
+	}
+
+	if strings.Contains(lowerText, "trade") || strings.Contains(lowerText, "forex") || strings.Contains(lowerText, "معامله") {
+		focus = "quantitative trading & risk management"
+		recommendations = append(recommendations, "Verify active stop loss and killzone timing before execution")
+	}
+
+	if strings.Contains(lowerText, "nixos") || strings.Contains(lowerText, "niri") || strings.Contains(lowerText, "system") {
+		focus = "system environment & configuration"
+		recommendations = append(recommendations, "Ensure dotfiles and system flake remain synchronized")
+	}
+
+	if len(recommendations) == 0 {
+		recommendations = append(recommendations, "Maintain regular memory consolidation and atomic fact indexing")
+	}
+
+	return map[string]any{
+		"status":          "optimal",
+		"focus":           focus,
+		"alert_level":     alertLevel,
+		"recommendations": recommendations,
+	}
 }

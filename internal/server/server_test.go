@@ -225,6 +225,14 @@ func TestServer_IngestAndSearchAndObservations(t *testing.T) {
 		t.Fatalf("handleDecision failed: %v", getResultText(res))
 	}
 
+	// 17. memory_reflect
+	res, err = srv.handleReflect(ctx, makeCallReq(map[string]any{
+		"context": "Agent memory blocks configured with Niri on NixOS",
+	}))
+	if err != nil || res.IsError {
+		t.Fatalf("handleReflect failed: %v", getResultText(res))
+	}
+
 	// Test auto-routing in search
 	res, err = srv.handleSearch(ctx, makeCallReq(map[string]any{
 		"query":     "How to configure Niri window manager?",

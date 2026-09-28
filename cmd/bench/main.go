@@ -51,19 +51,22 @@ func main() {
 	// BENCHMARK 1: Normalizer & Persian Tokenizer
 	runNormalizerBenchmark()
 
-	// BENCHMARK 2: Letta Core Working Memory Bootstrapping
+	// BENCHMARK 2: Built-in Pure Go Semantic Vectorizer
+	runBuiltinVectorizerBenchmark()
+
+	// BENCHMARK 3: Letta Core Working Memory Bootstrapping
 	runBootstrapBenchmark(database)
 
-	// BENCHMARK 3: Bi-Temporal Contradiction Resolution
+	// BENCHMARK 4: Bi-Temporal Contradiction Resolution
 	runBiTemporalBenchmark(database)
 
-	// BENCHMARK 4: BM25 Lexical Ranking
+	// BENCHMARK 5: BM25 Lexical Ranking
 	runBM25Benchmark(database)
 
-	// BENCHMARK 5: 4-Way Hybrid Search (Full RRF)
+	// BENCHMARK 6: 4-Way Hybrid Search (Full RRF)
 	runHybridSearchBenchmark(database, cfg)
 
-	// BENCHMARK 6: Laya System-1 / Jev AI Router
+	// BENCHMARK 7: Laya System-1 / Jev AI Router & Reflection
 	runLayaBenchmark(cfg)
 
 	fmt.Println("================================================================================")
@@ -90,6 +93,25 @@ func runNormalizerBenchmark() {
 	fmt.Printf("    • Throughput:  %.0f ops / sec\n\n", opsPerSec)
 }
 
+func runBuiltinVectorizerBenchmark() {
+	v := embedding.NewBuiltinVectorizer()
+	sampleText := "کاربر سجاد ترجیح می‌دهد از کامپوزیتور Niri با بوردرهای ۱ پیکسلی و تم Matugen در NixOS استفاده کند."
+	iterations := 20000
+
+	start := time.Now()
+	for i := 0; i < iterations; i++ {
+		_ = v.Vectorize(sampleText)
+	}
+	elapsed := time.Since(start)
+	perOp := float64(elapsed.Nanoseconds()) / float64(iterations) / 1000.0 // microseconds
+	opsPerSec := float64(iterations) / elapsed.Seconds()
+
+	fmt.Printf("[2] Pure Go Builtin Semantic Vectorizer (256-d subword n-gram multi-hash):\n")
+	fmt.Printf("    • Iterations:  %d vectorizations\n", iterations)
+	fmt.Printf("    • Latency:     %.2f µs / vector (%.4f ms)\n", perOp, perOp/1000.0)
+	fmt.Printf("    • Throughput:  %.0f vectors / sec\n\n", opsPerSec)
+}
+
 func runBootstrapBenchmark(database *sql.DB) {
 	mgr := blocks.NewManager(database)
 	iterations := 10000
@@ -102,7 +124,7 @@ func runBootstrapBenchmark(database *sql.DB) {
 	perOp := float64(elapsed.Nanoseconds()) / float64(iterations) / 1000.0
 	opsPerSec := float64(iterations) / elapsed.Seconds()
 
-	fmt.Printf("[2] In-Context Core Memory Bootstrapping (Letta Paradigm):\n")
+	fmt.Printf("[3] In-Context Core Memory Bootstrapping (Letta Paradigm):\n")
 	fmt.Printf("    • Iterations:  %d\n", iterations)
 	fmt.Printf("    • Latency:     %.2f µs / op (%.4f ms)\n", perOp, perOp/1000.0)
 	fmt.Printf("    • Throughput:  %.0f prompts / sec\n\n", opsPerSec)
@@ -121,7 +143,7 @@ func runBiTemporalBenchmark(database *sql.DB) {
 	perOp := float64(elapsed.Nanoseconds()) / float64(iterations) / 1000000.0 // ms
 	opsPerSec := float64(iterations) / elapsed.Seconds()
 
-	fmt.Printf("[3] Bi-Temporal Fact Registry with Contradiction Auto-Resolution (Graphiti Paradigm):\n")
+	fmt.Printf("[4] Bi-Temporal Fact Registry with Contradiction Auto-Resolution (Graphiti Paradigm):\n")
 	fmt.Printf("    • Iterations:  %d (atomic transaction with index update)\n", iterations)
 	fmt.Printf("    • Latency:     %.2f ms / assertion\n", perOp)
 	fmt.Printf("    • Throughput:  %.1f assertions / sec\n\n", opsPerSec)
@@ -156,7 +178,7 @@ func runBM25Benchmark(database *sql.DB) {
 	perOp := float64(elapsed.Nanoseconds()) / float64(iterations) / 1000.0
 	opsPerSec := float64(iterations) / elapsed.Seconds()
 
-	fmt.Printf("[4] BM25 Lexical Ranking Engine (Hindsight Paradigm):\n")
+	fmt.Printf("[5] BM25 Lexical Ranking Engine (Hindsight Paradigm):\n")
 	fmt.Printf("    • Corpus Size: 373 indexed chunks\n")
 	fmt.Printf("    • Iterations:  %d queries\n", iterations)
 	fmt.Printf("    • Latency:     %.2f µs / query (%.4f ms)\n", perOp, perOp/1000.0)
@@ -164,7 +186,7 @@ func runBM25Benchmark(database *sql.DB) {
 }
 
 func runHybridSearchBenchmark(database *sql.DB, cfg *config.Config) {
-	embClient := embedding.NewHTTPClient(cfg.EmbeddingURL, cfg.OllamaURL, "bge-m3", 1024)
+	embClient := embedding.NewBuiltinVectorizer()
 	searcher := retrieval.NewSearcher(database, embClient)
 	ctx := context.Background()
 	queries := []string{
@@ -184,7 +206,7 @@ func runHybridSearchBenchmark(database *sql.DB, cfg *config.Config) {
 	perOp := float64(elapsed.Nanoseconds()) / float64(iterations) / 1000000.0
 	opsPerSec := float64(iterations) / elapsed.Seconds()
 
-	fmt.Printf("[5] 4-Way Hybrid Search (Vectors + BM25 + Graph BFS + Temporal RRF Fusion):\n")
+	fmt.Printf("[6] 4-Way Hybrid Search (Vectors + BM25 + Graph BFS + Temporal RRF Fusion):\n")
 	fmt.Printf("    • Total Queries: %d\n", iterations)
 	fmt.Printf("    • Latency:       %.2f ms / search\n", perOp)
 	fmt.Printf("    • Throughput:    %.1f full hybrid searches / sec\n\n", opsPerSec)
@@ -200,7 +222,7 @@ func runLayaBenchmark(cfg *config.Config) {
 		"Rose shop caption format",
 	}
 
-	fmt.Printf("[6] Laya System-1 Decision Engine (Non-Autoregressive Typed Routing):\n")
+	fmt.Printf("[7] Laya System-1 Decision Engine (Non-Autoregressive Typed Routing & Reflection):\n")
 	for _, q := range queries {
 		start := time.Now()
 		ns, conf, _ := eng.RouteQuery(ctx, q)
@@ -208,5 +230,12 @@ func runLayaBenchmark(cfg *config.Config) {
 		fmt.Printf("    • Query: \"%s\"\n", q)
 		fmt.Printf("      -> Routed to: [%s] (confidence: %.2f) in %.2f ms\n", ns, conf, float64(lat.Microseconds())/1000.0)
 	}
+
+	// Reflection test
+	refStart := time.Now()
+	ref, _ := eng.Reflect(ctx, "Desktop session: Niri running on NixOS with 2 monitors")
+	refLat := time.Since(refStart)
+	fmt.Printf("    • Reflection Appraisal in %.2f ms (status: %v, focus: %v)\n",
+		float64(refLat.Microseconds())/1000.0, ref["cognitive_status"], ref["focus"])
 	fmt.Println()
 }

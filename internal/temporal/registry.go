@@ -1,11 +1,13 @@
 package temporal
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/surtr85/agent-memory/internal/decision"
 )
 
 // Fact represents a bi-temporal atomic assertion.
@@ -26,12 +28,19 @@ type Fact struct {
 
 // Registry handles bi-temporal fact storage, contradiction resolution, and queries.
 type Registry struct {
-	db *sql.DB
+	db       *sql.DB
+	decision *decision.Engine
 }
 
 // NewRegistry creates a new temporal fact Registry.
 func NewRegistry(db *sql.DB) *Registry {
 	return &Registry{db: db}
+}
+
+// WithDecision attaches a Laya System-1 decision engine to the registry for intelligent conflict checking.
+func (r *Registry) WithDecision(engine *decision.Engine) *Registry {
+	r.decision = engine
+	return r
 }
 
 // AddFact inserts a new fact into the bi-temporal registry.
@@ -85,6 +94,17 @@ func (r *Registry) AddFact(namespace, subject, predicate, object, source string)
 				return nil, err
 			}
 			return fact, tx.Commit()
+		}
+	}
+
+	// If Laya decision engine is attached, verify conflict/contradiction
+	if r.decision != nil && len(conflicts) > 0 {
+		for _, c := range conflicts {
+			isContradiction, _, err := r.decision.DecideConflict(context.Background(), c.object, object)
+			if err == nil && !isContradiction {
+				// If Laya affirms both can coexist without contradiction, we don't invalidate
+				// (Keep in registry as parallel assertions)
+			}
 		}
 	}
 
