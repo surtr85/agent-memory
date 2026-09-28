@@ -1,0 +1,17 @@
+services:
+  agent-memory:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agent-memory
+    restart: unless-stopped
+    environment:
+      - AGENT_MEMORY_DB=/data/memory.db
+      - AGENT_MEMORY_EMBEDDING_URL=http://bge-embedding:8088/embedding
+      - AGENT_MEMORY_OLLAMA_URL=http://ollama:11434
+    volumes:
+      - memory-data:/data
+
+volumes:
+  memory-data:
+    driver: local

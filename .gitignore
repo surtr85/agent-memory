@@ -1,0 +1,33 @@
+# Binaries
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# SQLite databases & WAL logs
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Environment & local state
+.env
+.env.local
+.cache/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+result
