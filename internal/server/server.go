@@ -6,6 +6,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/surtr85/agent-memory/internal/blocks"
 	"github.com/surtr85/agent-memory/internal/config"
+	"github.com/surtr85/agent-memory/internal/decision"
 	"github.com/surtr85/agent-memory/internal/embedding"
 	"github.com/surtr85/agent-memory/internal/retrieval"
 	"github.com/surtr85/agent-memory/internal/temporal"
@@ -20,6 +21,7 @@ type Server struct {
 	Temporal  *temporal.Registry
 	Searcher  *retrieval.Searcher
 	Embedding embedding.Client
+	Decision  *decision.Engine
 }
 
 // NewServer creates a new FastMCP server instance and registers all tools.
@@ -31,6 +33,7 @@ func NewServer(db *sql.DB, cfg *config.Config) *Server {
 	)
 
 	embClient := embedding.NewHTTPClient(cfg.EmbeddingURL, cfg.OllamaURL, "bge-m3", 1024)
+	decEngine := decision.NewEngine(cfg)
 	s := &Server{
 		MCPServer: mcpServer,
 		DB:        db,
@@ -39,6 +42,7 @@ func NewServer(db *sql.DB, cfg *config.Config) *Server {
 		Temporal:  temporal.NewRegistry(db),
 		Searcher:  retrieval.NewSearcher(db, embClient),
 		Embedding: embClient,
+		Decision:  decEngine,
 	}
 
 	// Ensure core blocks have defaults seeded

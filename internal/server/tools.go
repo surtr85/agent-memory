@@ -157,6 +157,16 @@ func (s *Server) registerTools() {
 		),
 		s.handleStats,
 	)
+
+	// 16. memory_decision (args: state, preset)
+	s.MCPServer.AddTool(
+		mcp.NewTool("memory_decision",
+			mcp.WithDescription("Executes System-1 / Jev AI fast decision engine (router, triage, reflex)."),
+			mcp.WithString("state", mcp.Required(), mcp.Description("Current state, user query, or observation text")),
+			mcp.WithString("preset", mcp.Description("Decision preset (e.g. 'router', 'triage', 'reflex', default: 'router')")),
+		),
+		s.handleDecision,
+	)
 }
 
 // 1. handleGetBootstrap
@@ -348,6 +358,12 @@ func (s *Server) handleSearch(ctx context.Context, req mcp.CallToolRequest) (*mc
 	topK := req.GetInt("top_k", 5)
 	includeHistorical := req.GetBool("include_historical", false)
 
+	if (namespace == "" || namespace == "auto") && s.Decision != nil {
+		if routedNS, _, routeErr := s.Decision.RouteQuery(ctx, query); routeErr == nil && routedNS != "" {
+			namespace = routedNS
+		}
+	}
+
 	results, err := s.Searcher.Search(ctx, query, namespace, topK, includeHistorical)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("search failed: %v", err)), nil
@@ -384,21 +400,27 @@ func (s *Server) handleIngestMarkdown(ctx context.Context, req mcp.CallToolReque
 
 // 12. handleRecordObservation
 func (s *Server) handleRecordObservation(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	category, err := req.RequireString("category")
-	if err != nil {
-		return mcp.NewToolResultError("missing required parameter: category"), nil
-	}
+	category := req.GetString("category", "")
 	content, err := req.RequireString("content")
 	if err != nil {
 		return mcp.NewToolResultError("missing required parameter: content"), nil
 	}
 	ns := req.GetString("namespace", "default")
 
+	if category == "" && s.Decision != nil {
+		if triagedCat, _, _, triageErr := s.Decision.TriageObservation(ctx, content); triageErr == nil && triagedCat != "" {
+			category = triagedCat
+		}
+	}
+	if category == "" {
+		category = "observation"
+	}
+
 	if err := pipeline.RecordObservation(s.DB, category, content, ns); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("failed to record observation: %v", err)), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("observation recorded in namespace %q", ns)), nil
+	return mcp.NewToolResultText(fmt.Sprintf("observation recorded in namespace %q with category %q", ns, category)), nil
 }
 
 // 13. handleConsolidateObservations
@@ -509,6 +531,30 @@ func (s *Server) handleStats(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	}
 
 	jsonBytes, err := json.MarshalIndent(stats, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("json marshal error: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(jsonBytes)), nil
+}
+
+// 16. handleDecision
+func (s *Server) handleDecision(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	state, err := req.RequireString("state")
+	if err != nil {
+		return mcp.NewToolResultError("missing required parameter: state"), nil
+	}
+	preset := req.GetString("preset", "router")
+
+	if s.Decision == nil {
+		return mcp.NewToolResultError("decision engine is not initialized"), nil
+	}
+
+	res, err := s.Decision.Decide(ctx, state, preset)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("decision error: %v", err)), nil
+	}
+
+	jsonBytes, err := json.MarshalIndent(res, "", "  ")
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("json marshal error: %v", err)), nil
 	}

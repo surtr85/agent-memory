@@ -1,9 +1,15 @@
 # 🧠 AgentMemory Universal (`agent-memory`)
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/surtr85/agent-memory.svg)](https://pkg.go.dev/github.com/surtr85/agent-memory)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Go Report Card](https://goreportcard.com/badge/github.com/surtr85/agent-memory)](https://goreportcard.com/report/github.com/surtr85/agent-memory)
-[![Built with Pure Go](https://img.shields.io/badge/CGO_ENABLED-0-success.svg)](https://golang.org)
+<p align="center">
+  <img src="assets/banner.svg" alt="AgentMemory Universal Banner" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://pkg.go.dev/github.com/surtr85/agent-memory"><img src="https://pkg.go.dev/badge/github.com/surtr85/agent-memory.svg" alt="Go Reference"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://golang.org"><img src="https://img.shields.io/badge/CGO_ENABLED-0-success.svg" alt="Built with Pure Go"></a>
+  <a href="https://github.com/surtr85/agent-memory/releases"><img src="https://img.shields.io/github/v/release/surtr85/agent-memory?color=purple" alt="Release"></a>
+</p>
 
 **AgentMemory Universal** is an ultra-fast, production-grade, local-first cognitive memory engine written in **Pure Go (`CGO_ENABLED=0`)**. It compiles into a single, dependency-free static binary (<15 MB) delivering sub-millisecond query latency and zero external runtime dependencies.
 
@@ -13,6 +19,7 @@ It synthesizes the world's most acclaimed agent memory paradigms into one unifie
 * ⏳ **Graphiti (Zep)**: **Bi-Temporal Knowledge Modeling** (`valid_from`, `valid_until`, `recorded_at`, `invalidated_at`). Contradictions close and invalidate older facts gracefully without destructive data loss.
 * ⚙️ **Cognee**: **ECL (Extract, Cognify, Load) Pipeline** with entity-relationship extraction and markdown structure awareness.
 * 🎯 **Hindsight**: **4-Way Hybrid Retrieval Fusion** (Dense Vector + BM25 with multilingual Persian/Arabic normalizer + Entity Graph Traversal + Temporal Slicing) with Reciprocal Rank Fusion (RRF).
+* ⚡ **Laya (Jev AI / TypeSafe System-1)**: Non-autoregressive System-1 decision engine integration running sub-15ms typed evaluations on AMD Radeon 780M Vulkan for automatic namespace routing, query classification, and observation triage.
 
 ---
 
@@ -169,6 +176,7 @@ docker run -d \
 | `memory_consolidate_observations` | `namespace` | Distill pending stream observations into active facts or core blocks |
 | `memory_health_check` | None | Run SQLite WAL health check, verify vector dimensions and table indices |
 | `memory_stats` | None | Detailed breakdown of facts, chunks, and entities by namespace |
+| `memory_decision` | `state`, `preset` | Run sub-15ms Laya / Jev AI System-1 typed decision over state |
 
 ---
 

@@ -215,4 +215,31 @@ func TestServer_IngestAndSearchAndObservations(t *testing.T) {
 	if err != nil || res.IsError {
 		t.Fatalf("handleStats failed: %v", getResultText(res))
 	}
+
+	// 16. memory_decision
+	res, err = srv.handleDecision(ctx, makeCallReq(map[string]any{
+		"state":  "How to configure Niri window manager?",
+		"preset": "router",
+	}))
+	if err != nil || res.IsError {
+		t.Fatalf("handleDecision failed: %v", getResultText(res))
+	}
+
+	// Test auto-routing in search
+	res, err = srv.handleSearch(ctx, makeCallReq(map[string]any{
+		"query":     "How to configure Niri window manager?",
+		"namespace": "auto",
+		"top_k":     3,
+	}))
+	if err != nil || res.IsError {
+		t.Fatalf("handleSearch with auto routing failed: %v", getResultText(res))
+	}
+
+	// Test category enrichment in observation
+	res, err = srv.handleRecordObservation(ctx, makeCallReq(map[string]any{
+		"content": "User prefers dark mode and Neovim",
+	}))
+	if err != nil || res.IsError {
+		t.Fatalf("handleRecordObservation with category inference failed: %v", getResultText(res))
+	}
 }

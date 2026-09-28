@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <!-- Background Glow -->
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#7000FF" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#05050A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Linear Gradients for Geometry -->
+    <linearGradient id="neonCyanPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF"/>
+      <stop offset="50%" stop-color="#7000FF"/>
+      <stop offset="100%" stop-color="#FF007A"/>
+    </linearGradient>
+
+    <linearGradient id="facetShading" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ambient Glow -->
+  <circle cx="100" cy="100" r="95" fill="url(#coreGlow)"/>
+
+  <!-- Outer Precision Ring (Bi-Temporal Horizon) -->
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#2A2B3D" stroke-width="1.5" stroke-dasharray="4 8"/>
+  <circle cx="100" cy="100" r="82" fill="none" stroke="url(#neonCyanPurple)" stroke-width="1" stroke-opacity="0.6"/>
+
+  <!-- Orbital Ticks -->
+  <line x1="100" y1="6" x2="100" y2="14" stroke="#00F0FF" stroke-width="2"/>
+  <line x1="100" y1="186" x2="100" y2="194" stroke="#FF007A" stroke-width="2"/>
+  <line x1="6" y1="100" x2="14" y2="100" stroke="#7000FF" stroke-width="2"/>
+  <line x1="186" y1="100" x2="194" y2="100" stroke="#00F0FF" stroke-width="2"/>
+
+  <!-- Central Cognitive Hyper-Crystal (Memory Monolith) -->
+  <g transform="translate(0, 0)">
+    <!-- Top Facet -->
+    <polygon points="100,32 145,68 100,88 55,68" fill="#181928" stroke="url(#neonCyanPurple)" stroke-width="1.5"/>
+    <polygon points="100,32 145,68 100,88 55,68" fill="url(#facetShading)"/>
+
+    <!-- Left Facet -->
+    <polygon points="55,68 100,88 100,148 55,128" fill="#10111E" stroke="url(#neonCyanPurple)" stroke-width="1.5"/>
+    <polygon points="55,68 100,88 100,148 55,128" fill="url(#facetShading)"/>
+
+    <!-- Right Facet -->
+    <polygon points="145,68 100,88 100,148 145,128" fill="#141524" stroke="url(#neonCyanPurple)" stroke-width="1.5"/>
+    <polygon points="145,68 100,88 100,148 145,128" fill="url(#facetShading)"/>
+
+    <!-- Bottom Anchor Spike -->
+    <polygon points="100,148 120,168 100,178 80,168" fill="#0D0E17" stroke="url(#neonCyanPurple)" stroke-width="1"/>
+  </g>
+
+  <!-- Neural Constellation Lines & Core Synapse -->
+  <g stroke="#00F0FF" stroke-width="1" stroke-opacity="0.8">
+    <line x1="100" y1="88" x2="100" y2="40" stroke-dasharray="2 3"/>
+    <line x1="100" y1="88" x2="65" y2="120" stroke-dasharray="2 3"/>
+    <line x1="100" y1="88" x2="135" y2="120" stroke-dasharray="2 3"/>
+  </g>
+
+  <!-- Glowing Synaptic Core Nodes -->
+  <circle cx="100" cy="88" r="4" fill="#00F0FF"/>
+  <circle cx="100" cy="88" r="8" fill="none" stroke="#00F0FF" stroke-width="1" stroke-opacity="0.5"/>
+
+  <circle cx="100" cy="32" r="2.5" fill="#FFFFFF"/>
+  <circle cx="145" cy="68" r="2.5" fill="#7000FF"/>
+  <circle cx="55" cy="68" r="2.5" fill="#00F0FF"/>
+  <circle cx="100" cy="148" r="2.5" fill="#FF007A"/>
+</svg>

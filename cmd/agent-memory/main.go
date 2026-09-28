@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/surtr85/agent-memory/internal/blocks"
 	"github.com/surtr85/agent-memory/internal/config"
 	"github.com/surtr85/agent-memory/internal/db"
+	"github.com/surtr85/agent-memory/internal/decision"
 	"github.com/surtr85/agent-memory/internal/embedding"
 	"github.com/surtr85/agent-memory/internal/pipeline"
 	"github.com/surtr85/agent-memory/internal/retrieval"
@@ -28,6 +30,8 @@ Usage:
   agent-memory serve                             Start stdio FastMCP server
   agent-memory bootstrap                         Print compact working memory prompt for prompt injection
   agent-memory search <query> [--ns <ns>] [--top <k>] [--historical]
+  agent-memory route <query>                     Classify query namespace with System-1 Decision Engine
+  agent-memory decide <state> [--preset <preset>] Execute System-1 / Jev AI decision engine
   agent-memory fact add <ns> <sub> <pred> <obj> [source]
   agent-memory fact list [--ns <ns>]
   agent-memory block get <label>
@@ -41,7 +45,10 @@ Usage:
 Environment Variables:
   AGENT_MEMORY_DB               Database file path (default: ~/.local/share/agent-memory/memory.db)
   AGENT_MEMORY_EMBEDDING_URL    Primary BGE-M3 embedding service URL
-  AGENT_MEMORY_OLLAMA_URL       Fallback Ollama service URL`)
+  AGENT_MEMORY_OLLAMA_URL       Fallback Ollama service URL
+  AGENT_MEMORY_LAYA_URL         Laya System-1 HTTP endpoint URL
+  AGENT_MEMORY_LAYA_MODEL       Laya GGUF model path
+  AGENT_MEMORY_LAYA_BIN         Laya binary executable path`)
 }
 
 func initDB(cfg *config.Config) *sql.DB {
@@ -406,6 +413,47 @@ func main() {
 		fmt.Printf("Chunks:        %d\n", chunksCount)
 		fmt.Printf("Entities:      %d\n", entitiesCount)
 		fmt.Printf("Observations:  %d\n", obsCount)
+
+	case "route":
+		if len(os.Args) < 3 {
+			fmt.Fprintf(os.Stderr, "Usage: agent-memory route <query>\n")
+			os.Exit(1)
+		}
+		query := os.Args[2]
+		decEngine := decision.NewEngine(cfg)
+		ns, conf, err := decEngine.RouteQuery(context.Background(), query)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Routing error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Namespace:  %s\nConfidence: %.2f\n", ns, conf)
+
+	case "decide":
+		if len(os.Args) < 3 {
+			fmt.Fprintf(os.Stderr, "Usage: agent-memory decide <state> [--preset <preset>]\n")
+			os.Exit(1)
+		}
+		state := os.Args[2]
+		preset := "router"
+		for i := 3; i < len(os.Args); i++ {
+			if os.Args[i] == "--preset" && i+1 < len(os.Args) {
+				preset = os.Args[i+1]
+				i++
+			}
+		}
+
+		decEngine := decision.NewEngine(cfg)
+		res, err := decEngine.Decide(context.Background(), state, preset)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Decision error: %v\n", err)
+			os.Exit(1)
+		}
+		jsonBytes, err := json.MarshalIndent(res, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "JSON marshal error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println(string(jsonBytes))
 
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown command: %s\nRun 'agent-memory help' for usage.\n", cmd)

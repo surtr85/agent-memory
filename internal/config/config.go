@@ -8,10 +8,13 @@ import (
 
 // Config represents runtime configuration for AgentMemory Universal.
 type Config struct {
-	DBPath       string
-	EmbeddingURL string
-	OllamaURL    string
-	LogLevel     string
+	DBPath        string
+	EmbeddingURL  string
+	OllamaURL     string
+	LogLevel      string
+	LayaURL       string
+	LayaModelPath string
+	LayaBinPath   string
 }
 
 // ExpandPath expands leading ~ to user's home directory.
@@ -51,10 +54,30 @@ func LoadConfig() *Config {
 		logLevel = "INFO"
 	}
 
+	layaURL := os.Getenv("AGENT_MEMORY_LAYA_URL")
+	if layaURL == "" {
+		layaURL = "http://127.0.0.1:8080/v1/systemone"
+	}
+
+	layaModelPath := os.Getenv("AGENT_MEMORY_LAYA_MODEL")
+	if layaModelPath == "" {
+		layaModelPath = "/home/amadeus/Projects/models/laya/laya_multilingual_q8_0.gguf"
+	}
+	layaModelPath = ExpandPath(layaModelPath)
+
+	layaBinPath := os.Getenv("AGENT_MEMORY_LAYA_BIN")
+	if layaBinPath == "" {
+		layaBinPath = "/home/amadeus/Projects/bin/laya-gpu"
+	}
+	layaBinPath = ExpandPath(layaBinPath)
+
 	return &Config{
-		DBPath:       dbPath,
-		EmbeddingURL: embeddingURL,
-		OllamaURL:    ollamaURL,
-		LogLevel:     logLevel,
+		DBPath:        dbPath,
+		EmbeddingURL:  embeddingURL,
+		OllamaURL:     ollamaURL,
+		LogLevel:      logLevel,
+		LayaURL:       layaURL,
+		LayaModelPath: layaModelPath,
+		LayaBinPath:   layaBinPath,
 	}
 }

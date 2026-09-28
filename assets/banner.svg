@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="100%" height="100%">
+  <defs>
+    <!-- Background Canvas -->
+    <radialGradient id="bgGlow" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#14152A"/>
+      <stop offset="50%" stop-color="#090A12"/>
+      <stop offset="100%" stop-color="#040407"/>
+    </radialGradient>
+
+    <!-- Ambient Spotlights -->
+    <radialGradient id="cyanSpot" cx="20%" cy="30%" r="35%">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#00F0FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="purpleSpot" cx="80%" cy="40%" r="40%">
+      <stop offset="0%" stop-color="#7000FF" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#7000FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pinkSpot" cx="50%" cy="80%" r="30%">
+      <stop offset="0%" stop-color="#FF007A" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#FF007A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Gradients -->
+    <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="60%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#94A3B8"/>
+    </linearGradient>
+
+    <linearGradient id="neonCyanPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF"/>
+      <stop offset="50%" stop-color="#7000FF"/>
+      <stop offset="100%" stop-color="#FF007A"/>
+    </linearGradient>
+
+    <linearGradient id="facetShading" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.6"/>
+    </linearGradient>
+
+    <!-- Grid Pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#FFFFFF" stroke-width="0.75" stroke-opacity="0.035"/>
+    </pattern>
+  </defs>
+
+  <!-- Deep Cosmic Background -->
+  <rect width="1200" height="380" fill="url(#bgGlow)"/>
+  <rect width="1200" height="380" fill="url(#cyanSpot)"/>
+  <rect width="1200" height="380" fill="url(#purpleSpot)"/>
+  <rect width="1200" height="380" fill="url(#pinkSpot)"/>
+  <rect width="1200" height="380" fill="url(#grid)"/>
+
+  <!-- Top Accent Rail Line -->
+  <line x1="0" y1="0" x2="1200" y2="0" stroke="url(#neonCyanPurple)" stroke-width="3"/>
+  <line x1="0" y1="379" x2="1200" y2="379" stroke="#1E2033" stroke-width="1"/>
+
+  <!-- Left Side: Geometric Monolith Logo Symbol -->
+  <g transform="translate(140, 190) scale(1.15)">
+    <!-- Outer Rings -->
+    <circle cx="0" cy="0" r="88" fill="none" stroke="#222436" stroke-width="1.5" stroke-dasharray="4 8"/>
+    <circle cx="0" cy="0" r="80" fill="none" stroke="url(#neonCyanPurple)" stroke-width="1.2" stroke-opacity="0.7"/>
+
+    <!-- Ticks -->
+    <line x1="0" y1="-88" x2="0" y2="-78" stroke="#00F0FF" stroke-width="2"/>
+    <line x1="0" y1="78" x2="0" y2="88" stroke="#FF007A" stroke-width="2"/>
+    <line x1="-88" y1="0" x2="-78" y2="0" stroke="#7000FF" stroke-width="2"/>
+    <line x1="78" y1="0" x2="88" y2="0" stroke="#00F0FF" stroke-width="2"/>
+
+    <!-- 3D Monolith Crystal -->
+    <g transform="translate(-100, -100)">
+      <polygon points="100,32 145,68 100,88 55,68" fill="#181928" stroke="url(#neonCyanPurple)" stroke-width="1.5"/>
+      <polygon points="100,32 145,68 100,88 55,68" fill="url(#facetShading)"/>
+
+      <polygon points="55,68 100,88 100,148 55,128" fill="#10111E" stroke="url(#neonCyanPurple)" stroke-width="1.5"/>
+      <polygon points="55,68 100,88 100,148 55,128" fill="url(#facetShading)"/>
+
+      <polygon points="145,68 100,88 100,148 145,128" fill="#141524" stroke="url(#neonCyanPurple)" stroke-width="1.5"/>
+      <polygon points="145,68 100,88 100,148 145,128" fill="url(#facetShading)"/>
+
+      <polygon points="100,148 120,168 100,178 80,168" fill="#0D0E17" stroke="url(#neonCyanPurple)" stroke-width="1"/>
+      
+      <!-- Core Pulsing Node -->
+      <circle cx="100" cy="88" r="4.5" fill="#00F0FF"/>
+      <circle cx="100" cy="88" r="9" fill="none" stroke="#00F0FF" stroke-width="1" stroke-opacity="0.6"/>
+      <circle cx="100" cy="32" r="2.5" fill="#FFFFFF"/>
+      <circle cx="145" cy="68" r="2.5" fill="#7000FF"/>
+      <circle cx="55" cy="68" r="2.5" fill="#00F0FF"/>
+      <circle cx="100" cy="148" r="2.5" fill="#FF007A"/>
+    </g>
+  </g>
+
+  <!-- Right Side: Clean Typography & Tech Badges -->
+  <g transform="translate(340, 110)">
+    <!-- Subtitle Header -->
+    <text x="0" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="4" fill="#00F0FF" text-transform="uppercase">
+      AUTONOMOUS COGNITIVE ENGINE • ZERO CGO
+    </text>
+
+    <!-- Main Title -->
+    <text x="0" y="82" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="54" font-weight="900" letter-spacing="-1.5" fill="url(#titleGrad)">
+      AgentMemory <tspan fill="#00F0FF">Universal</tspan>
+    </text>
+
+    <!-- Description -->
+    <text x="0" y="122" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="17" font-weight="400" fill="#94A3B8" letter-spacing="0.2">
+      Self-editing In-Context Core • Bi-Temporal Fact Registry • 4-Way Hybrid RRF • Laya System-1
+    </text>
+
+    <!-- Feature Architecture Chips -->
+    <g transform="translate(0, 155)">
+      <!-- Chip 1: Letta Core -->
+      <rect x="0" y="0" width="125" height="32" rx="6" fill="#131525" stroke="#2B2F4C" stroke-width="1"/>
+      <circle cx="14" cy="16" r="3.5" fill="#00F0FF"/>
+      <text x="26" y="21" font-family="monospace" font-size="12" font-weight="600" fill="#E2E8F0">Letta Core</text>
+
+      <!-- Chip 2: Graphiti Bi-Temporal -->
+      <rect x="135" y="0" width="165" height="32" rx="6" fill="#131525" stroke="#2B2F4C" stroke-width="1"/>
+      <circle cx="149" cy="16" r="3.5" fill="#7000FF"/>
+      <text x="161" y="21" font-family="monospace" font-size="12" font-weight="600" fill="#E2E8F0">Bi-Temporal Facts</text>
+
+      <!-- Chip 3: Hindsight 4-Way -->
+      <rect x="310" y="0" width="160" height="32" rx="6" fill="#131525" stroke="#2B2F4C" stroke-width="1"/>
+      <circle cx="324" cy="16" r="3.5" fill="#FF007A"/>
+      <text x="336" y="21" font-family="monospace" font-size="12" font-weight="600" fill="#E2E8F0">4-Way Hybrid RRF</text>
+
+      <!-- Chip 4: Laya System-1 -->
+      <rect x="480" y="0" width="155" height="32" rx="6" fill="#131525" stroke="#2B2F4C" stroke-width="1"/>
+      <circle cx="494" cy="16" r="3.5" fill="#10B981"/>
+      <text x="506" y="21" font-family="monospace" font-size="12" font-weight="600" fill="#E2E8F0">Laya System-1</text>
+
+      <!-- Chip 5: Pure Go -->
+      <rect x="645" y="0" width="125" height="32" rx="6" fill="#131525" stroke="#00F0FF" stroke-opacity="0.4" stroke-width="1"/>
+      <circle cx="659" cy="16" r="3.5" fill="#00F0FF"/>
+      <text x="671" y="21" font-family="monospace" font-size="12" font-weight="700" fill="#00F0FF">&lt;15MB Static</text>
+    </g>
+  </g>
+</svg>
