@@ -61,6 +61,9 @@ func AutoDiscoverLayaBin() string {
 	// 3. Search standard local user directories
 	homeDir, _ := os.UserHomeDir()
 	candidates := []string{
+		filepath.Join(homeDir, "Projects", "laya", "bin", "laya-gpu"),
+		filepath.Join(homeDir, "Projects", "laya", "bin", "laya-cli"),
+		filepath.Join(homeDir, "Projects", "laya", "bin", "laya-vulkan-bin"),
 		filepath.Join(homeDir, "Projects", "bin", "laya-gpu"),
 		filepath.Join(homeDir, "Projects", "bin", "laya-cli"),
 		filepath.Join(homeDir, ".local", "bin", "laya-gpu"),
@@ -84,6 +87,8 @@ func AutoDiscoverLayaModel() string {
 
 	homeDir, _ := os.UserHomeDir()
 	candidates := []string{
+		filepath.Join(homeDir, "Projects", "laya", "models", "laya_multilingual_q8_0.gguf"),
+		filepath.Join(homeDir, "Projects", "laya", "models", "laya_english_q8_0.gguf"),
 		filepath.Join(homeDir, "Projects", "models", "laya", "laya_multilingual_q8_0.gguf"),
 		filepath.Join(homeDir, "Projects", "models", "laya", "laya_english_q8_0.gguf"),
 		filepath.Join(homeDir, ".local", "share", "laya", "models", "laya_multilingual_q8_0.gguf"),
@@ -98,8 +103,9 @@ func AutoDiscoverLayaModel() string {
 		return found
 	}
 
-	// Glob pattern search in ~/.local/share/laya/models/ or ~/Projects/models/laya/
+	// Glob pattern search in ~/.local/share/laya/models/ or ~/Projects/laya/models/ or ~/Projects/models/laya/
 	dirs := []string{
+		filepath.Join(homeDir, "Projects", "laya", "models"),
 		filepath.Join(homeDir, "Projects", "models", "laya"),
 		filepath.Join(homeDir, ".local", "share", "laya", "models"),
 		filepath.Join(homeDir, ".cache", "laya"),

@@ -37,10 +37,10 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	if cfg.LayaURL != "http://127.0.0.1:8080/v1/systemone" {
 		t.Errorf("unexpected LayaURL: %s", cfg.LayaURL)
 	}
-	if cfg.LayaModelPath != "/home/amadeus/Projects/models/laya/laya_multilingual_q8_0.gguf" {
+	if cfg.LayaModelPath != "/home/amadeus/Projects/laya/models/laya_multilingual_q8_0.gguf" {
 		t.Errorf("unexpected LayaModelPath: %s", cfg.LayaModelPath)
 	}
-	if cfg.LayaBinPath != "/home/amadeus/Projects/bin/laya-gpu" {
+	if cfg.LayaBinPath != "/home/amadeus/Projects/laya/bin/laya-gpu" {
 		t.Errorf("unexpected LayaBinPath: %s", cfg.LayaBinPath)
 	}
 }
