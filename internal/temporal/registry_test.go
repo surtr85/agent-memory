@@ -25,7 +25,7 @@ func TestAddFact_Simple(t *testing.T) {
 
 	reg := NewRegistry(database)
 
-	fact, err := reg.AddFact("system", "User", "prefers_editor", "Neovim", "user_prompt")
+	fact, err := reg.AddFactWithCitation("system", "User", "prefers_editor", "Neovim", "user_prompt", "memory://live/human.md", "User prefers Neovim", 10, 0.9)
 	if err != nil {
 		t.Fatalf("AddFact failed: %v", err)
 	}
@@ -34,6 +34,9 @@ func TestAddFact_Simple(t *testing.T) {
 	}
 	if fact.Object != "Neovim" {
 		t.Errorf("expected object 'Neovim', got %q", fact.Object)
+	}
+	if fact.SourceURI != "memory://live/human.md" || fact.SourceQuote != "User prefers Neovim" || fact.LineNumber != 10 {
+		t.Errorf("citation fields mismatch: %+v", fact)
 	}
 	if fact.ValidUntil != nil {
 		t.Errorf("expected ValidUntil to be nil for active fact")
@@ -48,6 +51,15 @@ func TestAddFact_Simple(t *testing.T) {
 	}
 	if active[0].ID != fact.ID {
 		t.Errorf("expected fact ID %s, got %s", fact.ID, active[0].ID)
+	}
+
+	// Test ExplainFact
+	evidence, err := reg.ExplainFact(fact.ID)
+	if err != nil {
+		t.Fatalf("ExplainFact failed: %v", err)
+	}
+	if evidence.SourceURI != "memory://live/human.md" || evidence.EvidenceQuote != "User prefers Neovim" || evidence.Status != "active" {
+		t.Errorf("unexpected evidence data: %+v", evidence)
 	}
 }
 

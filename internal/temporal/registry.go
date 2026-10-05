@@ -10,7 +10,7 @@ import (
 	"github.com/surtr85/agent-memory/internal/decision"
 )
 
-// Fact represents a bi-temporal atomic assertion.
+// Fact represents a bi-temporal atomic assertion with citation and claim evidence.
 type Fact struct {
 	ID            string     `json:"id"`
 	Namespace     string     `json:"namespace"`
@@ -19,11 +19,28 @@ type Fact struct {
 	Object        string     `json:"object"`
 	Confidence    float64    `json:"confidence"`
 	Source        string     `json:"source"`
+	SourceURI     string     `json:"source_uri,omitempty"`
+	SourceQuote   string     `json:"source_quote,omitempty"`
+	LineNumber    int        `json:"line_number,omitempty"`
+	Salience      float64    `json:"salience,omitempty"`
 	ValidFrom     time.Time  `json:"valid_from"`
 	ValidUntil    *time.Time `json:"valid_until,omitempty"`
 	RecordedAt    time.Time  `json:"recorded_at"`
 	InvalidatedAt *time.Time `json:"invalidated_at,omitempty"`
 	SupersededBy  *string    `json:"superseded_by,omitempty"`
+}
+
+// FactEvidence represents the explainability envelope for a claim.
+type FactEvidence struct {
+	Fact            Fact      `json:"fact"`
+	EvidenceQuote   string    `json:"evidence_quote"`
+	SourceURI       string    `json:"source_uri"`
+	LineNumber      int       `json:"line_number"`
+	Confidence      float64   `json:"confidence"`
+	Salience        float64   `json:"salience"`
+	Status          string    `json:"status"` // 'active', 'superseded', 'retracted'
+	SupersededByID  *string   `json:"superseded_by_id,omitempty"`
+	ChainHistory    []Fact    `json:"chain_history,omitempty"`
 }
 
 // Registry handles bi-temporal fact storage, contradiction resolution, and queries.
@@ -50,6 +67,11 @@ func (r *Registry) WithDecision(engine *decision.Engine) *Registry {
 // - If the object differs, mark the old fact's `valid_until = now()`, `invalidated_at = now()`,
 //   `superseded_by = newFact.ID`.
 func (r *Registry) AddFact(namespace, subject, predicate, object, source string) (*Fact, error) {
+	return r.AddFactWithCitation(namespace, subject, predicate, object, source, "", "", 0, 0.5)
+}
+
+// AddFactWithCitation inserts a new fact along with detailed Muse-style citation & quote evidence.
+func (r *Registry) AddFactWithCitation(namespace, subject, predicate, object, source, sourceURI, sourceQuote string, lineNo int, salience float64) (*Fact, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -59,6 +81,10 @@ func (r *Registry) AddFact(namespace, subject, predicate, object, source string)
 	now := time.Now().UTC()
 	nowStr := now.Format(time.RFC3339Nano)
 	newID := uuid.New().String()
+
+	if salience <= 0 {
+		salience = 0.5
+	}
 
 	// Find any active conflicting facts (same namespace, subject, predicate with valid_until IS NULL)
 	rows, err := tx.Query(
@@ -112,11 +138,13 @@ func (r *Registry) AddFact(namespace, subject, predicate, object, source string)
 	_, err = tx.Exec(
 		`INSERT INTO facts (
 			id, namespace, subject, predicate, object, 
-			confidence, source, valid_from, valid_until, 
+			confidence, source, source_uri, source_quote, line_number, salience,
+			valid_from, valid_until, 
 			recorded_at, invalidated_at, superseded_by
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NULL, NULL)`,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NULL, NULL)`,
 		newID, namespace, subject, predicate, object,
-		1.0, source, nowStr, nowStr,
+		1.0, source, sourceURI, sourceQuote, lineNo, salience,
+		nowStr, nowStr,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed inserting new fact: %w", err)
@@ -140,16 +168,20 @@ func (r *Registry) AddFact(namespace, subject, predicate, object, source string)
 	}
 
 	return &Fact{
-		ID:         newID,
-		Namespace:  namespace,
-		Subject:    subject,
-		Predicate:  predicate,
-		Object:     object,
-		Confidence: 1.0,
-		Source:     source,
-		ValidFrom:  now,
-		ValidUntil: nil,
-		RecordedAt: now,
+		ID:          newID,
+		Namespace:   namespace,
+		Subject:     subject,
+		Predicate:   predicate,
+		Object:      object,
+		Confidence:  1.0,
+		Source:      source,
+		SourceURI:   sourceURI,
+		SourceQuote: sourceQuote,
+		LineNumber:  lineNo,
+		Salience:    salience,
+		ValidFrom:   now,
+		ValidUntil:  nil,
+		RecordedAt:  now,
 	}, nil
 }
 
@@ -157,6 +189,7 @@ func (r *Registry) AddFact(namespace, subject, predicate, object, source string)
 func (r *Registry) GetActiveFacts(namespace string) ([]Fact, error) {
 	query := `
 		SELECT id, namespace, subject, predicate, object, confidence, source,
+		       source_uri, source_quote, line_number, salience,
 		       valid_from, valid_until, recorded_at, invalidated_at, superseded_by
 		FROM facts
 		WHERE namespace = ? AND valid_until IS NULL
@@ -169,6 +202,7 @@ func (r *Registry) GetFactsAt(namespace string, t time.Time) ([]Fact, error) {
 	tStr := t.UTC().Format(time.RFC3339Nano)
 	query := `
 		SELECT id, namespace, subject, predicate, object, confidence, source,
+		       source_uri, source_quote, line_number, salience,
 		       valid_from, valid_until, recorded_at, invalidated_at, superseded_by
 		FROM facts
 		WHERE namespace = ?
@@ -206,6 +240,7 @@ func (r *Registry) InvalidateFact(id string) error {
 func (r *Registry) QueryFacts(namespace, subject, predicate string) ([]Fact, error) {
 	baseQuery := `
 		SELECT id, namespace, subject, predicate, object, confidence, source,
+		       source_uri, source_quote, line_number, salience,
 		       valid_from, valid_until, recorded_at, invalidated_at, superseded_by
 		FROM facts
 		WHERE namespace = ?`
@@ -228,19 +263,36 @@ func (r *Registry) QueryFacts(namespace, subject, predicate string) ([]Fact, err
 func (r *Registry) getFactByIDTx(tx *sql.Tx, id string) (*Fact, error) {
 	row := tx.QueryRow(`
 		SELECT id, namespace, subject, predicate, object, confidence, source,
+		       source_uri, source_quote, line_number, salience,
 		       valid_from, valid_until, recorded_at, invalidated_at, superseded_by
 		FROM facts WHERE id = ?`, id)
 
 	var f Fact
 	var validFromStr, recordedAtStr string
-	var validUntilStr, invalidatedAtStr, supersededBy sql.NullString
+	var validUntilStr, invalidatedAtStr, supersededBy, sourceURI, sourceQuote sql.NullString
+	var lineNo sql.NullInt64
+	var salience sql.NullFloat64
 
 	err := row.Scan(
 		&f.ID, &f.Namespace, &f.Subject, &f.Predicate, &f.Object, &f.Confidence, &f.Source,
+		&sourceURI, &sourceQuote, &lineNo, &salience,
 		&validFromStr, &validUntilStr, &recordedAtStr, &invalidatedAtStr, &supersededBy,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed scanning fact %s: %w", id, err)
+	}
+
+	if sourceURI.Valid {
+		f.SourceURI = sourceURI.String
+	}
+	if sourceQuote.Valid {
+		f.SourceQuote = sourceQuote.String
+	}
+	if lineNo.Valid {
+		f.LineNumber = int(lineNo.Int64)
+	}
+	if salience.Valid {
+		f.Salience = salience.Float64
 	}
 
 	f.ValidFrom = parseFactTime(validFromStr)
@@ -261,6 +313,93 @@ func (r *Registry) getFactByIDTx(tx *sql.Tx, id string) (*Fact, error) {
 	return &f, nil
 }
 
+// ExplainFact retrieves full claim evidence, quotes, source URI, and line citations,
+// plus historical chain of supersession for a given fact ID.
+func (r *Registry) ExplainFact(id string) (*FactEvidence, error) {
+	var f Fact
+	var validFromStr, recordedAtStr string
+	var validUntilStr, invalidatedAtStr, supersededBy, sourceURI, sourceQuote sql.NullString
+	var lineNo sql.NullInt64
+	var salience sql.NullFloat64
+
+	row := r.db.QueryRow(`
+		SELECT id, namespace, subject, predicate, object, confidence, source,
+		       source_uri, source_quote, line_number, salience,
+		       valid_from, valid_until, recorded_at, invalidated_at, superseded_by
+		FROM facts WHERE id = ?`, id)
+
+	err := row.Scan(
+		&f.ID, &f.Namespace, &f.Subject, &f.Predicate, &f.Object, &f.Confidence, &f.Source,
+		&sourceURI, &sourceQuote, &lineNo, &salience,
+		&validFromStr, &validUntilStr, &recordedAtStr, &invalidatedAtStr, &supersededBy,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("fact with id %q not found", id)
+		}
+		return nil, fmt.Errorf("failed fetching fact %s: %w", id, err)
+	}
+
+	if sourceURI.Valid {
+		f.SourceURI = sourceURI.String
+	}
+	if sourceQuote.Valid {
+		f.SourceQuote = sourceQuote.String
+	}
+	if lineNo.Valid {
+		f.LineNumber = int(lineNo.Int64)
+	}
+	if salience.Valid {
+		f.Salience = salience.Float64
+	}
+	f.ValidFrom = parseFactTime(validFromStr)
+	f.RecordedAt = parseFactTime(recordedAtStr)
+	if validUntilStr.Valid {
+		vu := parseFactTime(validUntilStr.String)
+		f.ValidUntil = &vu
+	}
+	if invalidatedAtStr.Valid {
+		ia := parseFactTime(invalidatedAtStr.String)
+		f.InvalidatedAt = &ia
+	}
+	if supersededBy.Valid {
+		sb := supersededBy.String
+		f.SupersededBy = &sb
+	}
+
+	status := "active"
+	if f.InvalidatedAt != nil {
+		if f.SupersededBy != nil {
+			status = "superseded"
+		} else {
+			status = "retracted"
+		}
+	}
+
+	// Trace chain history if this fact superseded older facts
+	chain, _ := r.queryFactsList(`
+		SELECT id, namespace, subject, predicate, object, confidence, source,
+		       source_uri, source_quote, line_number, salience,
+		       valid_from, valid_until, recorded_at, invalidated_at, superseded_by
+		FROM facts
+		WHERE superseded_by = ? OR id = (SELECT superseded_by FROM facts WHERE id = ?)
+		ORDER BY recorded_at ASC`, id, id)
+
+	evidence := &FactEvidence{
+		Fact:           f,
+		EvidenceQuote:  f.SourceQuote,
+		SourceURI:      f.SourceURI,
+		LineNumber:     f.LineNumber,
+		Confidence:     f.Confidence,
+		Salience:       f.Salience,
+		Status:         status,
+		SupersededByID: f.SupersededBy,
+		ChainHistory:   chain,
+	}
+
+	return evidence, nil
+}
+
 // QueryFactsList executes a custom query returning facts.
 func (r *Registry) QueryFactsList(query string, args ...interface{}) ([]Fact, error) {
 	return r.queryFactsList(query, args...)
@@ -277,14 +416,30 @@ func (r *Registry) queryFactsList(query string, args ...interface{}) ([]Fact, er
 	for rows.Next() {
 		var f Fact
 		var validFromStr, recordedAtStr string
-		var validUntilStr, invalidatedAtStr, supersededBy sql.NullString
+		var validUntilStr, invalidatedAtStr, supersededBy, sourceURI, sourceQuote sql.NullString
+		var lineNo sql.NullInt64
+		var salience sql.NullFloat64
 
 		err := rows.Scan(
 			&f.ID, &f.Namespace, &f.Subject, &f.Predicate, &f.Object, &f.Confidence, &f.Source,
+			&sourceURI, &sourceQuote, &lineNo, &salience,
 			&validFromStr, &validUntilStr, &recordedAtStr, &invalidatedAtStr, &supersededBy,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed scanning fact row: %w", err)
+		}
+
+		if sourceURI.Valid {
+			f.SourceURI = sourceURI.String
+		}
+		if sourceQuote.Valid {
+			f.SourceQuote = sourceQuote.String
+		}
+		if lineNo.Valid {
+			f.LineNumber = int(lineNo.Int64)
+		}
+		if salience.Valid {
+			f.Salience = salience.Float64
 		}
 
 		f.ValidFrom = parseFactTime(validFromStr)

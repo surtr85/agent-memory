@@ -250,4 +250,52 @@ func TestServer_IngestAndSearchAndObservations(t *testing.T) {
 	if err != nil || res.IsError {
 		t.Fatalf("handleRecordObservation with category inference failed: %v", getResultText(res))
 	}
+
+	// 18. memory_explain
+	activeFacts, _ := srv.Temporal.GetActiveFacts("system")
+	var targetID string
+	if len(activeFacts) > 0 {
+		targetID = activeFacts[0].ID
+	} else {
+		f, _ := srv.Temporal.AddFact("system", "Test", "is", "active", "unit")
+		targetID = f.ID
+	}
+
+	res, err = srv.handleExplain(ctx, makeCallReq(map[string]any{
+		"id": targetID,
+	}))
+	if err != nil || res.IsError {
+		t.Fatalf("handleExplain failed: %v", getResultText(res))
+	}
+
+	// 19. memory_record_repair & memory_get_alignment
+	res, err = srv.handleRecordRepair(ctx, makeCallReq(map[string]any{
+		"trigger_summary":  "Verbose apologies",
+		"agent_adjustment": "Eliminate apologies, fix directly",
+	}))
+	if err != nil || res.IsError {
+		t.Fatalf("handleRecordRepair failed: %v", getResultText(res))
+	}
+
+	res, err = srv.handleGetAlignment(ctx, makeCallReq(nil))
+	if err != nil || res.IsError {
+		t.Fatalf("handleGetAlignment failed: %v", getResultText(res))
+	}
+
+	// 20. memory_dream_cycle
+	res, err = srv.handleDreamCycle(ctx, makeCallReq(map[string]any{
+		"date": "2026-03-31",
+	}))
+	if err != nil || res.IsError {
+		t.Fatalf("handleDreamCycle failed: %v", getResultText(res))
+	}
+
+	// 21. memory_stage_forget & memory_execute_forget
+	res, err = srv.handleStageForget(ctx, makeCallReq(map[string]any{
+		"pattern":   "Alacritty",
+		"namespace": "system",
+	}))
+	if err != nil || res.IsError {
+		t.Fatalf("handleStageForget failed: %v", getResultText(res))
+	}
 }

@@ -67,20 +67,33 @@ func (s *Server) registerTools() {
 		s.handleListBlocks,
 	)
 
-	// 7. memory_add_fact (args: namespace, subject, predicate, object, source)
+// 7. memory_add_fact (args: namespace, subject, predicate, object, source, source_uri, source_quote, line_number, salience)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_add_fact",
-			mcp.WithDescription("Records a bi-temporal atomic fact (triple) with automatic contradiction resolution."),
+			mcp.WithDescription("Records a bi-temporal atomic fact (triple) with automatic contradiction resolution and source citation."),
 			mcp.WithString("namespace", mcp.Required(), mcp.Description("Fact domain namespace (e.g., 'system', 'forex', 'general')")),
 			mcp.WithString("subject", mcp.Required(), mcp.Description("Subject of the assertion")),
 			mcp.WithString("predicate", mcp.Required(), mcp.Description("Predicate/relation of the assertion")),
 			mcp.WithString("object", mcp.Required(), mcp.Description("Object value of the assertion")),
 			mcp.WithString("source", mcp.Description("Optional origin or reference for this fact")),
+			mcp.WithString("source_uri", mcp.Description("Optional source URI e.g. memory://live/human.md or chat://session/msg_42")),
+			mcp.WithString("source_quote", mcp.Description("Optional exact quote evidence supporting this fact")),
+			mcp.WithInteger("line_number", mcp.Description("Optional line citation")),
+			mcp.WithNumber("salience", mcp.Description("Optional importance score (0.0 to 2.0)")),
 		),
 		s.handleAddFact,
 	)
 
-	// 8. memory_get_active_facts (args: namespace)
+	// 8. memory_explain (args: id)
+	s.MCPServer.AddTool(
+		mcp.NewTool("memory_explain",
+			mcp.WithDescription("Explains a claim or fact with exact quotes, line citations, source URI, and supersession history."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Fact or claim ID to explain")),
+		),
+		s.handleExplain,
+	)
+
+	// 9. memory_get_active_facts (args: namespace)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_get_active_facts",
 			mcp.WithDescription("Retrieves all currently active facts (valid_until IS NULL) in a given namespace."),
@@ -89,7 +102,7 @@ func (s *Server) registerTools() {
 		s.handleGetActiveFacts,
 	)
 
-	// 9. memory_get_facts_at (args: namespace, timestamp)
+	// 10. memory_get_facts_at (args: namespace, timestamp)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_get_facts_at",
 			mcp.WithDescription("Time-travel query: retrieves facts that were valid in a namespace at a specific RFC3339 timestamp."),
@@ -99,7 +112,7 @@ func (s *Server) registerTools() {
 		s.handleGetFactsAt,
 	)
 
-	// 10. memory_search (args: query, namespace, top_k, include_historical)
+	// 11. memory_search (args: query, namespace, top_k, include_historical)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_search",
 			mcp.WithDescription("Executes 4-way hybrid search (Dense Vector + BM25 + Graph Traversal + Temporal Slicing) with RRF fusion."),
@@ -111,29 +124,33 @@ func (s *Server) registerTools() {
 		s.handleSearch,
 	)
 
-	// 11. memory_ingest_markdown (args: namespace, title, content)
+	// 12. memory_ingest_markdown (args: namespace, title, content, bank, source_uri)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_ingest_markdown",
-			mcp.WithDescription("Ingests a markdown document: splits into header sections, computes embeddings, and indexes chunks and wikilink entities."),
+			mcp.WithDescription("Ingests a markdown document: splits into header sections, computes embeddings, and indexes chunks into memory banks (world, experience, opinions, reflections)."),
 			mcp.WithString("namespace", mcp.Required(), mcp.Description("Domain namespace")),
 			mcp.WithString("title", mcp.Required(), mcp.Description("Document title")),
 			mcp.WithString("content", mcp.Required(), mcp.Description("Markdown body text")),
+			mcp.WithString("bank", mcp.Description("Memory bank (world, experience, opinions, reflections, people, groups, default: general)")),
+			mcp.WithString("source_uri", mcp.Description("Source URI path")),
 		),
 		s.handleIngestMarkdown,
 	)
 
-	// 12. memory_record_observation (args: category, content, namespace)
+	// 13. memory_record_observation (args: category, content, namespace, source_uri, line_number)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_record_observation",
 			mcp.WithDescription("Records an unconsolidated streaming observation/signal during agent execution."),
 			mcp.WithString("category", mcp.Required(), mcp.Description("Category (e.g. 'preference', 'tool_result', 'insight')")),
 			mcp.WithString("content", mcp.Required(), mcp.Description("Observation text")),
 			mcp.WithString("namespace", mcp.Description("Namespace (defaults to 'default')")),
+			mcp.WithString("source_uri", mcp.Description("Origin URI")),
+			mcp.WithInteger("line_number", mcp.Description("Line citation number")),
 		),
 		s.handleRecordObservation,
 	)
 
-	// 13. memory_consolidate_observations (args: namespace)
+	// 14. memory_consolidate_observations (args: namespace)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_consolidate_observations",
 			mcp.WithDescription("Consolidates pending raw observations into atomic facts and core blocks."),
@@ -142,15 +159,61 @@ func (s *Server) registerTools() {
 		s.handleConsolidateObservations,
 	)
 
-	// 14. memory_health_check
+	// 15. memory_dream_cycle (args: date)
+	s.MCPServer.AddTool(
+		mcp.NewTool("memory_dream_cycle",
+			mcp.WithDescription("Executes autonomous night/consolidation dream cycle: consolidates observations, forms prose reflection, and updates alignment synthesis."),
+			mcp.WithString("date", mcp.Description("Dream date in YYYY-MM-DD format (defaults to current date)")),
+		),
+		s.handleDreamCycle,
+	)
+
+	// 16. memory_record_repair (args: trigger_summary, agent_adjustment)
+	s.MCPServer.AddTool(
+		mcp.NewTool("memory_record_repair",
+			mcp.WithDescription("Records a friction/repair thread between agent and user, setting up standing alignment adjustments."),
+			mcp.WithString("trigger_summary", mcp.Required(), mcp.Description("Summary of friction or error")),
+			mcp.WithString("agent_adjustment", mcp.Required(), mcp.Description("How the agent should adjust future behavior")),
+		),
+		s.handleRecordRepair,
+	)
+
+	// 17. memory_get_alignment
+	s.MCPServer.AddTool(
+		mcp.NewTool("memory_get_alignment",
+			mcp.WithDescription("Retrieves active standing guidance, boundaries, and open repair threads synthesis (<60 tokens)."),
+		),
+		s.handleGetAlignment,
+	)
+
+	// 18. memory_stage_forget (args: pattern, namespace)
+	s.MCPServer.AddTool(
+		mcp.NewTool("memory_stage_forget",
+			mcp.WithDescription("Stage 1 & 2 of Safe Forgetting: identifies matching facts/chunks/entities and verifies safety before retraction."),
+			mcp.WithString("pattern", mcp.Required(), mcp.Description("Target pattern or entity to forget")),
+			mcp.WithString("namespace", mcp.Description("Optional namespace filter")),
+		),
+		s.handleStageForget,
+	)
+
+	// 19. memory_execute_forget (args: stage_id)
+	s.MCPServer.AddTool(
+		mcp.NewTool("memory_execute_forget",
+			mcp.WithDescription("Stage 3 & 4 of Safe Forgetting: executes cascading retraction across facts, chunks, and graph, and writes permanent tombstones."),
+			mcp.WithString("stage_id", mcp.Required(), mcp.Description("Approved Stage ID returned by memory_stage_forget")),
+		),
+		s.handleExecuteForget,
+	)
+
+	// 20. memory_health_check
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_health_check",
-			mcp.WithDescription("Returns database connection health, table status, fact count, block count, and chunk count."),
+			mcp.WithDescription("Returns database connection health, table status, fact count, block count, alignment, and tombstones count."),
 		),
 		s.handleHealthCheck,
 	)
 
-	// 15. memory_stats
+	// 21. memory_stats
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_stats",
 			mcp.WithDescription("Returns detailed namespace, entity, and chunk breakdown statistics."),
@@ -158,7 +221,7 @@ func (s *Server) registerTools() {
 		s.handleStats,
 	)
 
-	// 16. memory_decision (args: state, preset)
+	// 22. memory_decision (args: state, preset)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_decision",
 			mcp.WithDescription("Executes System-1 / Jev AI fast decision engine (router, triage, reflex)."),
@@ -168,7 +231,7 @@ func (s *Server) registerTools() {
 		s.handleDecision,
 	)
 
-	// 17. memory_reflect (args: context)
+	// 23. memory_reflect (args: context)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_reflect",
 			mcp.WithDescription("Runs Laya System-1 cognitive appraisal of current memory blocks, observations, or goals."),
@@ -184,6 +247,15 @@ func (s *Server) handleGetBootstrap(ctx context.Context, req mcp.CallToolRequest
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("failed to get bootstrap prompt: %v", err)), nil
 	}
+
+	// Append standing alignment synthesis if present (< 60 tokens)
+	if s.Alignment != nil {
+		synth, _ := s.Alignment.GenerateSynthesisPrompt()
+		if synth != "" {
+			prompt = prompt + "\n\n" + synth
+		}
+	}
+
 	return mcp.NewToolResultText(prompt), nil
 }
 
@@ -294,13 +366,36 @@ func (s *Server) handleAddFact(ctx context.Context, req mcp.CallToolRequest) (*m
 		return mcp.NewToolResultError("missing required parameter: object"), nil
 	}
 	source := req.GetString("source", "mcp")
+	sourceURI := req.GetString("source_uri", "")
+	sourceQuote := req.GetString("source_quote", "")
+	lineNo := req.GetInt("line_number", 0)
+	salience := req.GetFloat("salience", 0.5)
 
-	fact, err := s.Temporal.AddFact(ns, subject, predicate, object, source)
+	fact, err := s.Temporal.AddFactWithCitation(ns, subject, predicate, object, source, sourceURI, sourceQuote, lineNo, salience)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("failed to add fact: %v", err)), nil
 	}
 
 	jsonBytes, err := json.MarshalIndent(fact, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("json marshal error: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(jsonBytes)), nil
+}
+
+// 8. handleExplain
+func (s *Server) handleExplain(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	id, err := req.RequireString("id")
+	if err != nil {
+		return mcp.NewToolResultError("missing required parameter: id"), nil
+	}
+
+	evidence, err := s.Temporal.ExplainFact(id)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("explain failed: %v", err)), nil
+	}
+
+	jsonBytes, err := json.MarshalIndent(evidence, "", "  ")
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("json marshal error: %v", err)), nil
 	}
@@ -385,7 +480,7 @@ func (s *Server) handleSearch(ctx context.Context, req mcp.CallToolRequest) (*mc
 	return mcp.NewToolResultText(string(jsonBytes)), nil
 }
 
-// 11. handleIngestMarkdown
+// 12. handleIngestMarkdown
 func (s *Server) handleIngestMarkdown(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	ns, err := req.RequireString("namespace")
 	if err != nil {
@@ -399,15 +494,17 @@ func (s *Server) handleIngestMarkdown(ctx context.Context, req mcp.CallToolReque
 	if err != nil {
 		return mcp.NewToolResultError("missing required parameter: content"), nil
 	}
+	bank := req.GetString("bank", "general")
+	sourceURI := req.GetString("source_uri", "")
 
-	if err := pipeline.IngestMarkdown(s.DB, s.Embedding, ns, title, content); err != nil {
+	if err := pipeline.IngestMarkdownWithBank(s.DB, s.Embedding, ns, title, content, bank, sourceURI, 1); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("ingestion failed: %v", err)), nil
 	}
 
-	return mcp.NewToolResultText(fmt.Sprintf("successfully ingested markdown %q into namespace %q", title, ns)), nil
+	return mcp.NewToolResultText(fmt.Sprintf("successfully ingested markdown %q into namespace %q (bank: %q)", title, ns, bank)), nil
 }
 
-// 12. handleRecordObservation
+// 13. handleRecordObservation
 func (s *Server) handleRecordObservation(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	category := req.GetString("category", "")
 	content, err := req.RequireString("content")
@@ -415,6 +512,8 @@ func (s *Server) handleRecordObservation(ctx context.Context, req mcp.CallToolRe
 		return mcp.NewToolResultError("missing required parameter: content"), nil
 	}
 	ns := req.GetString("namespace", "default")
+	sourceURI := req.GetString("source_uri", "")
+	lineNo := req.GetInt("line_number", 0)
 
 	if category == "" && s.Decision != nil {
 		if triagedCat, _, _, triageErr := s.Decision.TriageObservation(ctx, content); triageErr == nil && triagedCat != "" {
@@ -425,14 +524,14 @@ func (s *Server) handleRecordObservation(ctx context.Context, req mcp.CallToolRe
 		category = "observation"
 	}
 
-	if err := pipeline.RecordObservation(s.DB, category, content, ns); err != nil {
+	if err := pipeline.RecordObservation(s.DB, category, content, ns, sourceURI, lineNo); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("failed to record observation: %v", err)), nil
 	}
 
 	return mcp.NewToolResultText(fmt.Sprintf("observation recorded in namespace %q with category %q", ns, category)), nil
 }
 
-// 13. handleConsolidateObservations
+// 14. handleConsolidateObservations
 func (s *Server) handleConsolidateObservations(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	if err := pipeline.ConsolidateObservations(s.DB); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("consolidation failed: %v", err)), nil
@@ -441,28 +540,120 @@ func (s *Server) handleConsolidateObservations(ctx context.Context, req mcp.Call
 	return mcp.NewToolResultText("observations consolidated successfully"), nil
 }
 
-// 14. handleHealthCheck
+// 15. handleDreamCycle
+func (s *Server) handleDreamCycle(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	dateStr := req.GetString("date", "")
+	res, err := pipeline.RunDreamCycle(s.DB, dateStr)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("dream cycle failed: %v", err)), nil
+	}
+
+	jsonBytes, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("json marshal error: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(jsonBytes)), nil
+}
+
+// 16. handleRecordRepair
+func (s *Server) handleRecordRepair(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	trigger, err := req.RequireString("trigger_summary")
+	if err != nil {
+		return mcp.NewToolResultError("missing required parameter: trigger_summary"), nil
+	}
+	adjustment, err := req.RequireString("agent_adjustment")
+	if err != nil {
+		return mcp.NewToolResultError("missing required parameter: agent_adjustment"), nil
+	}
+
+	thread, err := s.Alignment.RecordRepairThread(trigger, adjustment)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to record repair thread: %v", err)), nil
+	}
+
+	jsonBytes, err := json.MarshalIndent(thread, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("json marshal error: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(jsonBytes)), nil
+}
+
+// 17. handleGetAlignment
+func (s *Server) handleGetAlignment(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	synth, err := s.Alignment.GenerateSynthesisPrompt()
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed generating alignment synthesis: %v", err)), nil
+	}
+	return mcp.NewToolResultText(synth), nil
+}
+
+// 18. handleStageForget
+func (s *Server) handleStageForget(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	pattern, err := req.RequireString("pattern")
+	if err != nil {
+		return mcp.NewToolResultError("missing required parameter: pattern"), nil
+	}
+	ns := req.GetString("namespace", "")
+
+	res, err := s.Forget.StageForget(ctx, pattern, ns)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("staging forget failed: %v", err)), nil
+	}
+
+	jsonBytes, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("json marshal error: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(jsonBytes)), nil
+}
+
+// 19. handleExecuteForget
+func (s *Server) handleExecuteForget(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	stageID, err := req.RequireString("stage_id")
+	if err != nil {
+		return mcp.NewToolResultError("missing required parameter: stage_id"), nil
+	}
+
+	receipt, err := s.Forget.ExecuteForget(ctx, stageID)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("execute forget failed: %v", err)), nil
+	}
+
+	jsonBytes, err := json.MarshalIndent(receipt, "", "  ")
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("json marshal error: %v", err)), nil
+	}
+	return mcp.NewToolResultText(string(jsonBytes)), nil
+}
+
+// 20. handleHealthCheck
 func (s *Server) handleHealthCheck(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	if err := s.DB.PingContext(ctx); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("database ping failed: %v", err)), nil
 	}
 
-	var factCount, blockCount, chunkCount, entityCount, obsCount int
+	var factCount, blockCount, chunkCount, entityCount, obsCount, tombCount, dreamCount, alignCount int
 	_ = s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM facts").Scan(&factCount)
 	_ = s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM core_blocks").Scan(&blockCount)
 	_ = s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM chunks").Scan(&chunkCount)
 	_ = s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM entities").Scan(&entityCount)
 	_ = s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM observations").Scan(&obsCount)
+	_ = s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM tombstones").Scan(&tombCount)
+	_ = s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM dreams").Scan(&dreamCount)
+	_ = s.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM alignment_state").Scan(&alignCount)
 
 	health := map[string]any{
-		"status":        "healthy",
-		"database":      "connected (modernc.org/sqlite WAL)",
-		"facts_count":   factCount,
-		"blocks_count":  blockCount,
-		"chunks_count":  chunkCount,
-		"entities_count": entityCount,
+		"status":             "healthy",
+		"database":           "connected (modernc.org/sqlite WAL)",
+		"facts_count":        factCount,
+		"blocks_count":       blockCount,
+		"chunks_count":       chunkCount,
+		"entities_count":     entityCount,
 		"observations_count": obsCount,
-		"timestamp":     time.Now().UTC().Format(time.RFC3339),
+		"tombstones_count":   tombCount,
+		"dreams_count":       dreamCount,
+		"alignment_rules":    alignCount,
+		"timestamp":          time.Now().UTC().Format(time.RFC3339),
 	}
 
 	jsonBytes, err := json.MarshalIndent(health, "", "  ")

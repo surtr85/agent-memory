@@ -13,14 +13,16 @@ import (
 
 // SearchResult represents a unified retrieved chunk or atomic fact.
 type SearchResult struct {
-	ID        string    `json:"id"`
-	Type      string    `json:"type"` // "chunk" or "fact"
-	Namespace string    `json:"namespace"`
-	Title     string    `json:"title,omitempty"`
-	Content   string    `json:"content"`
-	Score     float64   `json:"score"`
-	ValidFrom time.Time `json:"valid_from,omitempty"`
-	ValidUntil *time.Time `json:"valid_until,omitempty"`
+	ID          string     `json:"id"`
+	Type        string     `json:"type"` // "chunk" or "fact"
+	Namespace   string     `json:"namespace"`
+	Title       string     `json:"title,omitempty"`
+	Content     string     `json:"content"`
+	SourceURI   string     `json:"source_uri,omitempty"`
+	LineNumber  int        `json:"line_number,omitempty"`
+	Score       float64    `json:"score"`
+	ValidFrom   time.Time  `json:"valid_from,omitempty"`
+	ValidUntil  *time.Time `json:"valid_until,omitempty"`
 }
 
 // Searcher coordinates dense vector, BM25, graph, and temporal retrieval.
@@ -55,7 +57,7 @@ func (s *Searcher) Search(ctx context.Context, query, namespace string, topK int
 	}
 
 	// 2. Fetch chunks from DB (filtered by namespace if specified)
-	chunkQuery := `SELECT c.id, c.namespace, c.title, c.content, v.embedding 
+	chunkQuery := `SELECT c.id, c.namespace, c.title, c.content, c.source_uri, c.line_number, v.embedding 
 	               FROM chunks c 
 	               JOIN vector_embeddings v ON c.id = v.chunk_id`
 	var chunkArgs []interface{}
@@ -71,19 +73,23 @@ func (s *Searcher) Search(ctx context.Context, query, namespace string, topK int
 	defer cRows.Close()
 
 	type chunkItem struct {
-		id        string
-		namespace string
-		title     string
-		content   string
-		sim       float32
+		id         string
+		namespace  string
+		title      string
+		content    string
+		sourceURI  string
+		lineNumber int
+		sim        float32
 	}
 	var chunks []chunkItem
 	var bm25Docs []Document
 
 	for cRows.Next() {
 		var id, ns, title, content string
+		var sourceURI sql.NullString
+		var lineNo sql.NullInt64
 		var embBlob []byte
-		if err := cRows.Scan(&id, &ns, &title, &content, &embBlob); err != nil {
+		if err := cRows.Scan(&id, &ns, &title, &content, &sourceURI, &lineNo, &embBlob); err != nil {
 			return nil, err
 		}
 
@@ -94,11 +100,13 @@ func (s *Searcher) Search(ctx context.Context, query, namespace string, topK int
 		}
 
 		chunks = append(chunks, chunkItem{
-			id:        id,
-			namespace: ns,
-			title:     title,
-			content:   content,
-			sim:       sim,
+			id:         id,
+			namespace:  ns,
+			title:      title,
+			content:    content,
+			sourceURI:  sourceURI.String,
+			lineNumber: int(lineNo.Int64),
+			sim:        sim,
 		})
 
 		bm25Docs = append(bm25Docs, Document{
@@ -108,7 +116,7 @@ func (s *Searcher) Search(ctx context.Context, query, namespace string, topK int
 	}
 
 	// 3. Fetch facts from DB
-	factQuery := `SELECT id, namespace, subject, predicate, object, valid_from, valid_until, invalidated_at FROM facts`
+	factQuery := `SELECT id, namespace, subject, predicate, object, source_uri, line_number, valid_from, valid_until, invalidated_at FROM facts`
 	var factConditions []string
 	var factArgs []interface{}
 
@@ -143,6 +151,8 @@ func (s *Searcher) Search(ctx context.Context, query, namespace string, topK int
 		predicate  string
 		object     string
 		content    string
+		sourceURI  string
+		lineNumber int
 		validFrom  time.Time
 		validUntil *time.Time
 	}
@@ -150,9 +160,11 @@ func (s *Searcher) Search(ctx context.Context, query, namespace string, topK int
 
 	for fRows.Next() {
 		var id, ns, subj, pred, obj string
+		var sourceURI sql.NullString
+		var lineNo sql.NullInt64
 		var validFrom time.Time
 		var validUntil, invalidatedAt sql.NullTime
-		if err := fRows.Scan(&id, &ns, &subj, &pred, &obj, &validFrom, &validUntil, &invalidatedAt); err != nil {
+		if err := fRows.Scan(&id, &ns, &subj, &pred, &obj, &sourceURI, &lineNo, &validFrom, &validUntil, &invalidatedAt); err != nil {
 			return nil, err
 		}
 
@@ -169,6 +181,8 @@ func (s *Searcher) Search(ctx context.Context, query, namespace string, topK int
 			predicate:  pred,
 			object:     obj,
 			content:    factStr,
+			sourceURI:  sourceURI.String,
+			lineNumber: int(lineNo.Int64),
 			validFrom:  validFrom,
 			validUntil: vUntilPtr,
 		})
@@ -253,12 +267,14 @@ func (s *Searcher) Search(ctx context.Context, query, namespace string, topK int
 	for _, item := range fusedItems {
 		if c, ok := chunkMap[item.ID]; ok {
 			results = append(results, SearchResult{
-				ID:        c.id,
-				Type:      "chunk",
-				Namespace: c.namespace,
-				Title:     c.title,
-				Content:   c.content,
-				Score:     item.Score,
+				ID:         c.id,
+				Type:       "chunk",
+				Namespace:  c.namespace,
+				Title:      c.title,
+				Content:    c.content,
+				SourceURI:  c.sourceURI,
+				LineNumber: c.lineNumber,
+				Score:      item.Score,
 			})
 		} else if f, ok := factMap[item.ID]; ok {
 			results = append(results, SearchResult{
@@ -266,6 +282,8 @@ func (s *Searcher) Search(ctx context.Context, query, namespace string, topK int
 				Type:       "fact",
 				Namespace:  f.namespace,
 				Content:    f.content,
+				SourceURI:  f.sourceURI,
+				LineNumber: f.lineNumber,
 				Score:      item.Score,
 				ValidFrom:  f.validFrom,
 				ValidUntil: f.validUntil,

@@ -97,11 +97,11 @@ func TestRecordAndConsolidateObservations(t *testing.T) {
 	}
 
 	// 1. Record observations
-	err = RecordObservation(database, "human", "User prefers concise answers", "system")
+	err = RecordObservation(database, "human", "User prefers concise answers", "system", "memory://live/human.md", 5)
 	if err != nil {
 		t.Fatalf("RecordObservation 1 failed: %v", err)
 	}
-	err = RecordObservation(database, "fact", "User prefers_editor Neovim", "system")
+	err = RecordObservation(database, "fact", "User prefers_editor Neovim", "system", "memory://live/human.md", 10)
 	if err != nil {
 		t.Fatalf("RecordObservation 2 failed: %v", err)
 	}
@@ -151,5 +151,14 @@ func TestRecordAndConsolidateObservations(t *testing.T) {
 	}
 	if len(facts) != 1 || facts[0].Object != "Neovim" {
 		t.Fatalf("expected fact User prefers_editor Neovim, got: %+v", facts)
+	}
+
+	// 3. Test Dream Cycle
+	dreamRes, err := RunDreamCycle(database, "2026-03-31")
+	if err != nil {
+		t.Fatalf("RunDreamCycle failed: %v", err)
+	}
+	if dreamRes == nil || dreamRes.DreamDate != "2026-03-31" {
+		t.Fatalf("unexpected dream cycle result: %+v", dreamRes)
 	}
 }

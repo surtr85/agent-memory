@@ -15,9 +15,11 @@
 
 It eliminates the fragility, heavy RAM overhead, and multi-second delays of legacy memory systems by unifying the world's most acclaimed cognitive paradigms:
 * 🧩 **Letta (MemGPT)**: Self-editing, in-context **Working Core Memory Blocks** (`human`, `persona`, `environment`) that bootstrap instantly into agent system prompts (<400 tokens) with zero retrieval latency.
-* ⚡ **Mem0**: **Atomic Fact Extraction & Scoped Namespaces**, decoupling memory from sprawling document blobs into discrete assertions categorized by domain (`system`, `forex`, `ecommerce`, `literature`, `ai`).
+* ⚡ **Mem0 & Muse Claim Verification**: **Atomic Fact Extraction & Source Citations**, recording exact quote evidence, line citations, and URI addressing (`memory://`, `file://`, `chat://`) with full explainability (`memory_explain`).
 * ⏳ **Graphiti (Zep)**: **Bi-Temporal Knowledge Modeling** (`valid_from`, `valid_until`, `recorded_at`, `invalidated_at`). Contradictions close and invalidate older facts gracefully without destructive data loss.
-* ⚙️ **Cognee**: **ECL (Extract, Cognify, Load) Pipeline** with entity-relationship extraction and markdown structure awareness.
+* 🏛️ **Muse Dossiers & Banks**: Organized memory banks (`world`, `experience`, `opinions`, `reflections`, `people`, `groups`) with automated **Nightly Dream Consolidation** (`memory_dream_cycle`).
+* 🎯 **Standing Guidance & Repair Threads**: Active boundary tracking and friction repair (`alignment_state`, `repair_threads`) synthesized cleanly into bootstrap prompts (<60 tokens).
+* 🛡️ **4-Stage Safe Forgetting Pipeline**: Staging, Laya System-1 safety gate check, cascade retraction (facts, chunks, entity relations), and permanent tombstone prevention against zombie re-ingestion.
 * 🎯 **Hindsight**: **4-Way Hybrid Retrieval Fusion** (Native Subword Semantic Vectors + BM25 with multilingual Persian/Arabic normalizer + Entity Graph Traversal + Temporal Slicing) with Reciprocal Rank Fusion (RRF).
 * ⚡ **Laya (Jev AI / TypeSafe System-1)**: Non-autoregressive System-1 decision engine running sub-15ms typed evaluations on AMD Radeon 780M Vulkan for automatic namespace routing, query classification, contradiction conflict checking, and autonomous cognitive reflection (`memory_reflect`).
 
@@ -30,7 +32,7 @@ Traditional agent memory setups force users to run multiple heavy services: an e
 **AgentMemory Universal eliminates all external embedding daemons:**
 1. **Built-in Pure-Go Subword Vectorizer**:
    - Uses multi-hash feature projection with sign hashing across character 3-grams, 4-grams, and word tokens.
-   - Generates calibrated 256-dimensional unit vectors in **12 microseconds** (~82,000 vectors/sec) with zero RAM overhead.
+   - Generates calibrated 256-dimensional unit vectors in **9.2 microseconds** (~108,000 vectors/sec) with zero RAM overhead.
    - Natively captures subword stems, prefixes, and morphological variations in Persian and English.
 2. **Embedded ACID SQLite Engine**:
    - Uses `modernc.org/sqlite` in WAL mode for lightning-fast concurrent reads and writes directly to `~/.local/share/agent-memory/memory.db`.
@@ -39,85 +41,35 @@ Traditional agent memory setups force users to run multiple heavy services: an e
 
 ---
 
-## 🏛️ Architecture Blueprint
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                   AGENT MEMORY UNIVERSAL (v3.2) PURE-GO ARCHITECTURE                   │
-└────────────────────────────────────────────────────────────────────────────────────────┘
-
-  ┌────────────────────────────────────────────────────────────────────────────────────┐
-  │ 1. IN-CONTEXT CORE MEMORY (Working Context Injection — < 400 Tokens)                │
-  │    • persona: Tone, communication style, peer demeanor (no corporate slop)         │
-  │    • human: User identity, preferences, hard constraints                           │
-  │    • environment: Active machine, OS, window manager, current working targets      │
-  │    • Primitives: memory_replace_block, memory_append_block, memory_set_block       │
-  └────────────────────────────────────────────────────────────────────────────────────┘
-                                        │
-                                        ▼
-  ┌────────────────────────────────────────────────────────────────────────────────────┐
-  │ 2. SCOPED DOMAIN NAMESPACES                                                        │
-  │    ┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌─────────────────┐    │
-  │    │    system    │   │    forex     │   │  ecommerce   │   │   literature    │    │
-  │    │   & Coding   │   │  & Quants    │   │ (Rose Shop)  │   │   Translation   │    │
-  │    └──────────────┘   └──────────────┘   └──────────────┘   └─────────────────┘    │
-  └────────────────────────────────────────────────────────────────────────────────────┘
-                                        │
-                                        ▼
-  ┌────────────────────────────────────────────────────────────────────────────────────┐
-  │ 3. BI-TEMPORAL ATOMIC FACT REGISTRY (Pure Go SQLite ACID Storage)                  │
-  │    • Triples: (Subject) --[Predicate]--> (Object)                                  │
-  │    • Valid Time: valid_from, valid_until (real-world truth horizon)                │
-  │    • System Time: recorded_at, invalidated_at (transaction audit trail)             │
-  │    • Contradiction Auto-Resolver (Supersede rather than destroy)                   │
-  └────────────────────────────────────────────────────────────────────────────────────┘
-                                        │
-                                        ▼
-  ┌────────────────────────────────────────────────────────────────────────────────────┐
-  │ 4. 4-WAY HYBRID RETRIEVAL ENGINE (Hindsight SOTA Architecture)                     │
-  │    ┌──────────────────┬──────────────────┬─────────────────┬──────────────────┐    │
-  │    │ Native Subword   │   Lexical BM25   │ Entity/Relation │ Temporal Slicing │    │
-  │    │ Dense Vectors    │ (Persian Normal) │ (Multi-hop BFS) │ (Active vs Hist) │    │
-  │    │ (12 µs Pure Go)  │ (49 µs Okapi)    │ (Graph Network) │ (Bi-Temporal)    │    │
-  │    └──────────────────┴──────────────────┴─────────────────┴──────────────────┘    │
-  │                                     │                                              │
-  │                                     ▼                                              │
-  │               Reciprocal Rank Fusion (RRF) with k = 60                             │
-  └────────────────────────────────────────────────────────────────────────────────────┘
-                                        │
-                                        ▼
-  ┌────────────────────────────────────────────────────────────────────────────────────┐
-  │ 5. LAYA SYSTEM-1 / JEV AI DECISION ENGINE                                          │
-  │    • Non-autoregressive typed routing (choice, score, noul)                        │
-  │    • Auto-Namespace Query Routing & Observation Noise Triage                       │
-  │    • Semantic Contradiction Checking & Autonomous Cognitive Reflection             │
-  └────────────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 🧰 MCP Tool Suite (16 Cognitive Tools)
+## 🧰 MCP Tool Suite (23 Cognitive Tools)
 
 `agent-memory` exposes a complete **FastMCP 2.0** server over `stdio` and `sse`:
 
 | # | Tool Name | Parameters | Capabilities |
 | :---: | :--- | :--- | :--- |
-| **1** | `memory_get_bootstrap` | None | Returns compact working core memory XML (<400 tokens) for instant system prompt injection. |
+| **1** | `memory_get_bootstrap` | None | Returns compact working core memory + alignment synthesis XML (<400 tokens) for prompt injection. |
 | **2** | `memory_get_block` | `label` | Read content of any core block (`human`, `persona`, `environment`). |
 | **3** | `memory_set_block` | `label`, `content` | Create or update a core memory block. |
 | **4** | `memory_replace_block` | `label`, `old_content`, `new_content` | Precision in-context text swap without hallucinating or losing surrounding state. |
 | **5** | `memory_append_block` | `label`, `content` | Append facts or new priorities to an existing block. |
 | **6** | `memory_list_blocks` | None | List all registered working memory blocks and token metrics. |
-| **7** | `memory_add_fact` | `namespace`, `subject`, `predicate`, `object`, `source` | Record atomic triple with **automatic contradiction resolution**. |
-| **8** | `memory_get_active_facts`| `namespace` | Retrieve currently valid, unexpired truth for a domain. |
-| **9** | `memory_get_facts_at` | `namespace`, `timestamp` | Time-travel query: inspect exact knowledge state at any ISO8601 point in history. |
-| **10** | `memory_search` | `query`, `namespace`, `top_k`, `include_historical` | 4-way hybrid search (Native Vectors + BM25 + Graph BFS + Temporal) via RRF. |
-| **11** | `memory_ingest_markdown`| `namespace`, `title`, `content` | ECL pipeline: chunks markdown by headers, embeds, and extracts `[[Wikilinks]]`. |
-| **12** | `memory_record_observation`| `category`, `content`, `namespace` | Log real-time observations (`PREFERENCE`, `DISCOVERY`, `TOOL_ERROR`). |
-| **13** | `memory_consolidate_observations`| `namespace` | Distill pending stream observations into active facts or core blocks. |
-| **14** | `memory_reflect` | `context` (optional) | Autonomous System-1 cognitive appraisal of memory state, focus, and alert level. |
-| **15** | `memory_decision` | `state`, `preset` | Run sub-15ms Laya / Jev AI System-1 typed decision over arbitrary state. |
-| **16** | `memory_health_check` | None | Verify SQLite WAL status, vectorizer mode, and entity metrics. |
+| **7** | `memory_add_fact` | `namespace`, `subject`, `predicate`, `object`, `source`, `source_uri`, `source_quote`, `line_number` | Record atomic triple with **automatic contradiction resolution and citation evidence**. |
+| **8** | `memory_explain` | `id` | Explain a claim or fact with exact quotes, line citations, source URI, and supersession history. |
+| **9** | `memory_get_active_facts`| `namespace` | Retrieve currently valid, unexpired truth for a domain. |
+| **10** | `memory_get_facts_at` | `namespace`, `timestamp` | Time-travel query: inspect exact knowledge state at any ISO8601 point in history. |
+| **11** | `memory_search` | `query`, `namespace`, `top_k`, `include_historical` | 4-way hybrid search (Native Vectors + BM25 + Graph BFS + Temporal) via RRF. |
+| **12** | `memory_ingest_markdown`| `namespace`, `title`, `content`, `bank`, `source_uri` | ECL pipeline: chunks markdown into memory banks (`world`, `experience`, `opinions`, `reflections`). |
+| **13** | `memory_record_observation`| `category`, `content`, `namespace`, `source_uri`, `line_number` | Log real-time observations with tombstone protection. |
+| **14** | `memory_consolidate_observations`| `namespace` | Distill pending stream observations into active facts or core blocks. |
+| **15** | `memory_dream_cycle` | `date` | Run autonomous night consolidation: distill observations, write prose reflection, update alignment. |
+| **16** | `memory_record_repair` | `trigger_summary`, `agent_adjustment` | Record friction/repair thread to permanently calibrate future agent demeanor. |
+| **17** | `memory_get_alignment` | None | Get standing guidance, boundaries, and open repair threads synthesis (<60 tokens). |
+| **18** | `memory_stage_forget` | `pattern`, `namespace` | Stage 1 & 2 of Safe Forgetting: identifies targets and verifies with Laya safety guard. |
+| **19** | `memory_execute_forget`| `stage_id` | Stage 3 & 4 of Safe Forgetting: cascade retraction + permanent tombstone creation. |
+| **20** | `memory_reflect` | `context` (optional) | Autonomous System-1 cognitive appraisal of memory state, focus, and alert level. |
+| **21** | `memory_decision` | `state`, `preset` | Run sub-15ms Laya / Jev AI System-1 typed decision over arbitrary state. |
+| **22** | `memory_stats` | None | Detailed breakdown of facts, chunks, banks, and entities. |
+| **23** | `memory_health_check` | None | Verify SQLite WAL status, vectorizer mode, dreams, tombstones, and alignment. |
 
 ---
 

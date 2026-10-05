@@ -10,11 +10,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/surtr85/agent-memory/internal/alignment"
 	"github.com/surtr85/agent-memory/internal/blocks"
 	"github.com/surtr85/agent-memory/internal/config"
 	"github.com/surtr85/agent-memory/internal/db"
 	"github.com/surtr85/agent-memory/internal/decision"
 	"github.com/surtr85/agent-memory/internal/embedding"
+	"github.com/surtr85/agent-memory/internal/forget"
 	"github.com/surtr85/agent-memory/internal/pipeline"
 	"github.com/surtr85/agent-memory/internal/retrieval"
 	"github.com/surtr85/agent-memory/internal/server"
@@ -32,12 +34,17 @@ Usage:
   agent-memory search <query> [--ns <ns>] [--top <k>] [--historical]
   agent-memory route <query>                     Classify query namespace with System-1 Decision Engine
   agent-memory decide <state> [--preset <preset>] Execute System-1 / Jev AI decision engine
-  agent-memory fact add <ns> <sub> <pred> <obj> [source]
+  agent-memory fact add <ns> <sub> <pred> <obj> [source] [--uri <uri>] [--quote <quote>] [--line <line>]
+  agent-memory fact explain <id>                 Explain fact with citations and supersession history
   agent-memory fact list [--ns <ns>]
   agent-memory block get <label>
   agent-memory block set <label> <content>
   agent-memory block list
-  agent-memory ingest <file_or_dir> [--ns <ns>]
+  agent-memory ingest <file_or_dir> [--ns <ns>] [--bank <bank>]
+  agent-memory dream [date]                      Run autonomous night/consolidation dream cycle
+  agent-memory alignment [show|repair]           Show standing alignment or record repair thread
+  agent-memory forget stage <pattern> [--ns <ns>] Stage memory for safe retraction
+  agent-memory forget execute <stage_id>         Execute cascade retraction and save tombstones
   agent-memory reflect [context]                 System-1 cognitive appraisal of memory blocks & goals
   agent-memory stats                             Show namespace & entity breakdown
   agent-memory health                            Show database health & record counts
@@ -99,6 +106,13 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Error getting bootstrap prompt: %v\n", err)
 			os.Exit(1)
 		}
+
+		alignMgr := alignment.NewManager(database)
+		synth, _ := alignMgr.GenerateSynthesisPrompt()
+		if synth != "" {
+			prompt = prompt + "\n\n" + synth
+		}
+
 		fmt.Println(prompt)
 
 	case "search":
@@ -176,17 +190,59 @@ func main() {
 			pred := os.Args[5]
 			obj := os.Args[6]
 			source := "cli"
-			if len(os.Args) >= 8 {
-				source = os.Args[7]
+			uri := ""
+			quote := ""
+			line := 0
+
+			for i := 7; i < len(os.Args); i++ {
+				switch os.Args[i] {
+				case "--uri":
+					if i+1 < len(os.Args) {
+						uri = os.Args[i+1]
+						i++
+					}
+				case "--quote":
+					if i+1 < len(os.Args) {
+						quote = os.Args[i+1]
+						i++
+					}
+				case "--line":
+					if i+1 < len(os.Args) {
+						line, _ = strconv.Atoi(os.Args[i+1])
+						i++
+					}
+				default:
+					if source == "cli" {
+						source = os.Args[i]
+					}
+				}
 			}
 
-			fact, err := reg.AddFact(ns, sub, pred, obj, source)
+			fact, err := reg.AddFactWithCitation(ns, sub, pred, obj, source, uri, quote, line, 0.8)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error adding fact: %v\n", err)
 				os.Exit(1)
 			}
-			fmt.Printf("Fact recorded successfully [ID: %s]\n  (%s) --[%s]--> (%s)\n  Namespace: %s | Source: %s\n",
-				fact.ID, fact.Subject, fact.Predicate, fact.Object, fact.Namespace, fact.Source)
+			fmt.Printf("Fact recorded successfully [ID: %s]\n  (%s) --[%s]--> (%s)\n  Namespace: %s | Source: %s | URI: %s\n",
+				fact.ID, fact.Subject, fact.Predicate, fact.Object, fact.Namespace, fact.Source, fact.SourceURI)
+
+		case "explain":
+			if len(os.Args) < 4 {
+				fmt.Fprintf(os.Stderr, "Usage: agent-memory fact explain <id>\n")
+				os.Exit(1)
+			}
+			id := os.Args[3]
+			evidence, err := reg.ExplainFact(id)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error explaining fact: %v\n", err)
+				os.Exit(1)
+			}
+			jsonBytes, err := json.MarshalIndent(evidence, "", "  ")
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "JSON marshal error: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println(string(jsonBytes))
 
 		case "list":
 			ns := ""
@@ -225,7 +281,7 @@ func main() {
 			}
 
 		default:
-			fmt.Fprintf(os.Stderr, "Unknown fact command: %s. Use 'add' or 'list'.\n", subCmd)
+			fmt.Fprintf(os.Stderr, "Unknown fact command: %s. Use 'add', 'explain', or 'list'.\n", subCmd)
 			os.Exit(1)
 		}
 
@@ -290,9 +346,13 @@ func main() {
 		}
 		targetPath := os.Args[2]
 		ns := "documents"
+		bank := "general"
 		for i := 3; i < len(os.Args); i++ {
 			if os.Args[i] == "--ns" && i+1 < len(os.Args) {
 				ns = os.Args[i+1]
+				i++
+			} else if os.Args[i] == "--bank" && i+1 < len(os.Args) {
+				bank = os.Args[i+1]
 				i++
 			}
 		}
@@ -331,7 +391,7 @@ func main() {
 			return
 		}
 
-		fmt.Printf("Ingesting %d file(s) into namespace %q...\n", len(files), ns)
+		fmt.Printf("Ingesting %d file(s) into namespace %q (bank: %q)...\n", len(files), ns, bank)
 		for _, f := range files {
 			data, err := os.ReadFile(f)
 			if err != nil {
@@ -339,7 +399,8 @@ func main() {
 				continue
 			}
 			title := filepath.Base(f)
-			if err := pipeline.IngestMarkdown(database, embClient, ns, title, string(data)); err != nil {
+			sourceURI := fmt.Sprintf("file://%s", f)
+			if err := pipeline.IngestMarkdownWithBank(database, embClient, ns, title, string(data), bank, sourceURI, 1); err != nil {
 				fmt.Fprintf(os.Stderr, "Failed ingesting %s: %v\n", f, err)
 			} else {
 				fmt.Printf("  ✓ Ingested %s\n", title)
@@ -399,12 +460,15 @@ func main() {
 			os.Exit(1)
 		}
 
-		var factsCount, blocksCount, chunksCount, entitiesCount, obsCount int
+		var factsCount, blocksCount, chunksCount, entitiesCount, obsCount, tombCount, dreamCount, alignCount int
 		_ = database.QueryRow("SELECT COUNT(*) FROM facts").Scan(&factsCount)
 		_ = database.QueryRow("SELECT COUNT(*) FROM core_blocks").Scan(&blocksCount)
 		_ = database.QueryRow("SELECT COUNT(*) FROM chunks").Scan(&chunksCount)
 		_ = database.QueryRow("SELECT COUNT(*) FROM entities").Scan(&entitiesCount)
 		_ = database.QueryRow("SELECT COUNT(*) FROM observations").Scan(&obsCount)
+		_ = database.QueryRow("SELECT COUNT(*) FROM tombstones").Scan(&tombCount)
+		_ = database.QueryRow("SELECT COUNT(*) FROM dreams").Scan(&dreamCount)
+		_ = database.QueryRow("SELECT COUNT(*) FROM alignment_state").Scan(&alignCount)
 
 		fmt.Println("Status:          HEALTHY")
 		fmt.Println("Database Engine: modernc.org/sqlite (Pure Go, Zero CGO, WAL mode)")
@@ -416,6 +480,118 @@ func main() {
 		fmt.Printf("Chunks:          %d\n", chunksCount)
 		fmt.Printf("Entities:        %d\n", entitiesCount)
 		fmt.Printf("Observations:    %d\n", obsCount)
+		fmt.Printf("Tombstones:      %d (retraction blacklists)\n", tombCount)
+		fmt.Printf("Dreams:          %d (nightly consolidation archives)\n", dreamCount)
+		fmt.Printf("Alignment Rules: %d\n", alignCount)
+
+	case "dream":
+		database := initDB(cfg)
+		defer database.Close()
+		dateStr := ""
+		if len(os.Args) >= 3 {
+			dateStr = os.Args[2]
+		}
+		res, err := pipeline.RunDreamCycle(database, dateStr)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Dream cycle error: %v\n", err)
+			os.Exit(1)
+		}
+		jsonBytes, err := json.MarshalIndent(res, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "JSON marshal error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println(string(jsonBytes))
+
+	case "alignment":
+		database := initDB(cfg)
+		defer database.Close()
+		alignMgr := alignment.NewManager(database)
+
+		subCmd := "show"
+		if len(os.Args) >= 3 {
+			subCmd = os.Args[2]
+		}
+
+		switch subCmd {
+		case "show":
+			synth, err := alignMgr.GenerateSynthesisPrompt()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println(synth)
+
+		case "repair":
+			if len(os.Args) < 5 {
+				fmt.Fprintf(os.Stderr, "Usage: agent-memory alignment repair <trigger_summary> <agent_adjustment>\n")
+				os.Exit(1)
+			}
+			trigger := os.Args[3]
+			adj := strings.Join(os.Args[4:], " ")
+			th, err := alignMgr.RecordRepairThread(trigger, adj)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error recording repair: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Repair thread recorded [ID: %s]\nTrigger:    %s\nAdjustment: %s\n", th.ID, th.TriggerSummary, th.AgentAdjustment)
+
+		default:
+			fmt.Fprintf(os.Stderr, "Unknown alignment command: %s. Use 'show' or 'repair'.\n", subCmd)
+			os.Exit(1)
+		}
+
+	case "forget":
+		if len(os.Args) < 3 {
+			fmt.Fprintf(os.Stderr, "Usage: agent-memory forget [stage|execute] ...\n")
+			os.Exit(1)
+		}
+		subCmd := os.Args[2]
+		database := initDB(cfg)
+		defer database.Close()
+		decEngine := decision.NewEngine(cfg)
+		forgetPipeline := forget.NewPipeline(database, decEngine)
+
+		switch subCmd {
+		case "stage":
+			if len(os.Args) < 4 {
+				fmt.Fprintf(os.Stderr, "Usage: agent-memory forget stage <pattern> [--ns <ns>]\n")
+				os.Exit(1)
+			}
+			pattern := os.Args[3]
+			ns := ""
+			for i := 4; i < len(os.Args); i++ {
+				if os.Args[i] == "--ns" && i+1 < len(os.Args) {
+					ns = os.Args[i+1]
+					i++
+				}
+			}
+			stageRes, err := forgetPipeline.StageForget(context.Background(), pattern, ns)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error staging forget: %v\n", err)
+				os.Exit(1)
+			}
+			jsonBytes, _ := json.MarshalIndent(stageRes, "", "  ")
+			fmt.Println(string(jsonBytes))
+
+		case "execute":
+			if len(os.Args) < 4 {
+				fmt.Fprintf(os.Stderr, "Usage: agent-memory forget execute <stage_id>\n")
+				os.Exit(1)
+			}
+			stageID := os.Args[3]
+			receipt, err := forgetPipeline.ExecuteForget(context.Background(), stageID)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error executing forget: %v\n", err)
+				os.Exit(1)
+			}
+			jsonBytes, _ := json.MarshalIndent(receipt, "", "  ")
+			fmt.Println(string(jsonBytes))
+
+		default:
+			fmt.Fprintf(os.Stderr, "Unknown forget command: %s. Use 'stage' or 'execute'.\n", subCmd)
+			os.Exit(1)
+		}
 
 	case "reflect":
 		database := initDB(cfg)

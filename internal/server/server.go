@@ -4,10 +4,12 @@ import (
 	"database/sql"
 
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/surtr85/agent-memory/internal/alignment"
 	"github.com/surtr85/agent-memory/internal/blocks"
 	"github.com/surtr85/agent-memory/internal/config"
 	"github.com/surtr85/agent-memory/internal/decision"
 	"github.com/surtr85/agent-memory/internal/embedding"
+	"github.com/surtr85/agent-memory/internal/forget"
 	"github.com/surtr85/agent-memory/internal/retrieval"
 	"github.com/surtr85/agent-memory/internal/temporal"
 )
@@ -22,6 +24,8 @@ type Server struct {
 	Searcher  *retrieval.Searcher
 	Embedding embedding.Client
 	Decision  *decision.Engine
+	Alignment *alignment.Manager
+	Forget    *forget.Pipeline
 }
 
 // NewServer creates a new FastMCP server instance and registers all tools.
@@ -44,6 +48,8 @@ func NewServer(db *sql.DB, cfg *config.Config) *Server {
 		Searcher:  retrieval.NewSearcher(db, embClient),
 		Embedding: embClient,
 		Decision:  decEngine,
+		Alignment: alignment.NewManager(db),
+		Forget:    forget.NewPipeline(db, decEngine),
 	}
 
 	// Ensure core blocks have defaults seeded

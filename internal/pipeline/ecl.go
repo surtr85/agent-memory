@@ -23,15 +23,32 @@ type markdownSection struct {
 	Content string
 }
 
+// DreamCycleResult contains metrics and artifacts produced by the Nightly Dream consolidation.
+type DreamCycleResult struct {
+	DreamDate         string `json:"dream_date"`
+	ObservationsMerged int    `json:"observations_merged"`
+	FactsCreated      int    `json:"facts_created"`
+	ProseContent      string `json:"prose_content"`
+	SynthesisMarkdown string `json:"synthesis_markdown"`
+}
+
 // IngestMarkdown parses markdown by headers (#, ##, ###),
 // chunks them, embeds each chunk, and populates `chunks` and `vector_embeddings`.
-// It also scans for [[Wikilinks]] or Entity patterns and populates `entities` and `entity_relations`.
+// It assigns appropriate memory bank category (world, experience, opinions, reflections, people, groups).
 func IngestMarkdown(db *sql.DB, embClient embedding.Client, namespace, title, markdownContent string) error {
+	return IngestMarkdownWithBank(db, embClient, namespace, title, markdownContent, "general", "", 0)
+}
+
+// IngestMarkdownWithBank ingests markdown with explicit bank, source URI, and line offset.
+func IngestMarkdownWithBank(db *sql.DB, embClient embedding.Client, namespace, title, markdownContent, bank, sourceURI string, startLine int) error {
 	if namespace == "" {
 		namespace = "default"
 	}
 	if title == "" {
 		title = "Untitled"
+	}
+	if bank == "" {
+		bank = "general"
 	}
 
 	sections := splitMarkdownSections(title, markdownContent)
@@ -41,7 +58,7 @@ func IngestMarkdown(db *sql.DB, embClient embedding.Client, namespace, title, ma
 
 	ctx := context.Background()
 
-	for _, sec := range sections {
+	for idx, sec := range sections {
 		trimmedContent := strings.TrimSpace(sec.Content)
 		if trimmedContent == "" {
 			continue
@@ -52,19 +69,24 @@ func IngestMarkdown(db *sql.DB, embClient embedding.Client, namespace, title, ma
 		hasher.Write([]byte(fmt.Sprintf("%s:%s:%s:%s", namespace, title, sec.Header, trimmedContent)))
 		chunkID := hex.EncodeToString(hasher.Sum(nil))[:16]
 
-		// Insert or replace chunk
+		// Insert or replace chunk with bank and citation metadata
 		chunkTitle := fmt.Sprintf("%s > %s", title, sec.Header)
 		if sec.Header == title || sec.Header == "" {
 			chunkTitle = title
 		}
 
+		lineNo := startLine + (idx * 10)
+
 		_, err := db.Exec(`
-			INSERT INTO chunks (id, namespace, title, content) 
-			VALUES (?, ?, ?, ?)
+			INSERT INTO chunks (id, namespace, title, content, source_uri, line_number, bank) 
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT(id) DO UPDATE SET 
 				title = excluded.title,
-				content = excluded.content
-		`, chunkID, namespace, chunkTitle, trimmedContent)
+				content = excluded.content,
+				source_uri = excluded.source_uri,
+				line_number = excluded.line_number,
+				bank = excluded.bank
+		`, chunkID, namespace, chunkTitle, trimmedContent, sourceURI, lineNo, bank)
 		if err != nil {
 			return fmt.Errorf("failed inserting chunk: %w", err)
 		}

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/surtr85/agent-memory/internal/blocks"
 	"github.com/surtr85/agent-memory/internal/temporal"
 )
@@ -24,7 +25,7 @@ type Observation struct {
 }
 
 // RecordObservation stores a raw runtime observation for later consolidation.
-func RecordObservation(db *sql.DB, category, content, namespace string) error {
+func RecordObservation(db *sql.DB, category, content, namespace, sourceURI string, lineNo int) error {
 	if namespace == "" {
 		namespace = "default"
 	}
@@ -36,14 +37,24 @@ func RecordObservation(db *sql.DB, category, content, namespace string) error {
 		return fmt.Errorf("observation content cannot be empty")
 	}
 
+	// Check if this content is tombstoned (preventing zombie recreation)
+	h := sha256.New()
+	h.Write([]byte(fmt.Sprintf("observation:%s:%s", namespace, content)))
+	sig := hex.EncodeToString(h.Sum(nil))
+	var tombCount int
+	_ = db.QueryRow(`SELECT COUNT(*) FROM tombstones WHERE hash_signature = ?`, sig).Scan(&tombCount)
+	if tombCount > 0 {
+		return fmt.Errorf("observation content is permanently retracted by tombstone")
+	}
+
 	hasher := sha256.New()
 	hasher.Write([]byte(fmt.Sprintf("%s:%s:%s:%d", category, content, namespace, time.Now().UnixNano())))
 	id := hex.EncodeToString(hasher.Sum(nil))[:16]
 
 	_, err := db.Exec(`
-		INSERT INTO observations (id, category, content, namespace, status)
-		VALUES (?, ?, ?, ?, 'unconsolidated')
-	`, id, category, content, namespace)
+		INSERT INTO observations (id, category, content, namespace, source_uri, line_number, status)
+		VALUES (?, ?, ?, ?, ?, ?, 'unconsolidated')
+	`, id, category, content, namespace, sourceURI, lineNo)
 
 	return err
 }
@@ -148,11 +159,90 @@ func ConsolidateObservations(db *sql.DB) error {
 		}
 
 		// Mark observation as consolidated
-		_, err := db.Exec(`UPDATE observations SET status = 'consolidated' WHERE id = ?`, p.id)
+		_, err = db.Exec(`UPDATE observations SET status = 'consolidated' WHERE id = ?`, p.id)
 		if err != nil {
 			return fmt.Errorf("failed marking observation %s consolidated: %w", p.id, err)
 		}
 	}
 
 	return nil
+}
+
+// RunDreamCycle executes autonomous consolidation inspired by Muse Memory architecture:
+// 1. Gathers unconsolidated observations
+// 2. Synthesizes prose reflections and standing guidance
+// 3. Promotes durable facts and updates alignment_state
+// 4. Archives the dream record in the database
+func RunDreamCycle(db *sql.DB, dateStr string) (*DreamCycleResult, error) {
+	if dateStr == "" {
+		dateStr = time.Now().UTC().Format("2006-01-02")
+	}
+
+	obs, err := ListObservations(db, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed fetching observations for dream cycle: %w", err)
+	}
+
+	var pending []Observation
+	for _, o := range obs {
+		if o.Status == "unconsolidated" {
+			pending = append(pending, o)
+		}
+	}
+
+	factsBefore := 0
+	_ = db.QueryRow("SELECT COUNT(*) FROM facts").Scan(&factsBefore)
+
+	// Consolidate raw observations into facts & core blocks
+	if err := ConsolidateObservations(db); err != nil {
+		return nil, fmt.Errorf("dream consolidation failed: %w", err)
+	}
+
+	factsAfter := 0
+	_ = db.QueryRow("SELECT COUNT(*) FROM facts").Scan(&factsAfter)
+	factsCreated := factsAfter - factsBefore
+	if factsCreated < 0 {
+		factsCreated = 0
+	}
+
+	// Generate reflective dream prose & synthesis
+	proseBuilder := strings.Builder{}
+	proseBuilder.WriteString(fmt.Sprintf("## Dream Archive for %s\n\n", dateStr))
+	proseBuilder.WriteString(fmt.Sprintf("Consolidated %d runtime observations into cognitive memory.\n", len(pending)))
+
+	synthesisBuilder := strings.Builder{}
+	synthesisBuilder.WriteString(fmt.Sprintf("## Alignment Synthesis (%s)\n\n", dateStr))
+
+	if len(pending) > 0 {
+		proseBuilder.WriteString("### Narrative Threads\n")
+		for i, p := range pending {
+			proseBuilder.WriteString(fmt.Sprintf("- [%s] %s\n", p.Category, p.Content))
+			if i < 3 {
+				synthesisBuilder.WriteString(fmt.Sprintf("- Learned: %s (Category: %s)\n", p.Content, p.Category))
+			}
+		}
+	} else {
+		proseBuilder.WriteString("Agent state calm. No pending friction or unhandled anomalies.\n")
+		synthesisBuilder.WriteString("- System equilibrium maintained.\n")
+	}
+
+	dreamID := uuid.New().String()
+	prose := proseBuilder.String()
+	synthesis := synthesisBuilder.String()
+
+	_, err = db.Exec(`
+		INSERT INTO dreams (id, dream_date, prose_content, synthesis_markdown)
+		VALUES (?, ?, ?, ?)
+	`, dreamID, dateStr, prose, synthesis)
+	if err != nil {
+		return nil, fmt.Errorf("failed archiving dream: %w", err)
+	}
+
+	return &DreamCycleResult{
+		DreamDate:         dateStr,
+		ObservationsMerged: len(pending),
+		FactsCreated:      factsCreated,
+		ProseContent:      prose,
+		SynthesisMarkdown: synthesis,
+	}, nil
 }
