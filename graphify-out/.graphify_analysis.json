@@ -1,0 +1,444 @@
+{
+  "communities": {
+    "0": [
+      "internal_embedding_client_go_embedding_client",
+      "internal_embedding_math",
+      "internal_embedding_math_deserializeembedding",
+      "internal_embedding_math_serializeembedding",
+      "internal_embedding_math_test_testserializedeserializeembedding",
+      "internal_pipeline_ecl",
+      "internal_pipeline_ecl_extractwikilinks",
+      "internal_pipeline_ecl_ingestmarkdown",
+      "internal_pipeline_ecl_ingestmarkdownwithbank",
+      "internal_pipeline_ecl_splitmarkdownsections",
+      "internal_retrieval_hybrid",
+      "internal_retrieval_hybrid_go_retrieval_searcher",
+      "internal_retrieval_hybrid_newsearcher",
+      "internal_retrieval_rrf",
+      "internal_retrieval_rrf_reciprocalrankfusion",
+      "pipeline_dreamcycleresult",
+      "pipeline_markdownsection",
+      "retrieval_scoreditem",
+      "retrieval_searcher_search",
+      "retrieval_searchresult"
+    ],
+    "1": [
+      "cmd_agent_memory_main",
+      "cmd_agent_memory_main_initdb",
+      "cmd_agent_memory_main_main",
+      "cmd_agent_memory_main_printhelp",
+      "go_type_database_sql_db",
+      "go_type_testing_t",
+      "internal_alignment_alignment_test",
+      "internal_alignment_alignment_test_setuptestdb",
+      "internal_alignment_alignment_test_testalignmentandrepairs",
+      "internal_blocks_blocks_newmanager",
+      "internal_blocks_blocks_test",
+      "internal_blocks_blocks_test_setuptestdb",
+      "internal_blocks_blocks_test_testappendblock",
+      "internal_blocks_blocks_test_testgetbootstrapprompt",
+      "internal_blocks_blocks_test_testreplaceblock",
+      "internal_blocks_blocks_test_testseeddefaults",
+      "internal_blocks_blocks_test_testsetandgetblock",
+      "internal_db_db",
+      "internal_db_db_initschema",
+      "internal_db_db_open",
+      "internal_db_db_test",
+      "internal_db_db_test_testopen_filewithdirs",
+      "internal_db_db_test_testopenandinitschema_inmemory",
+      "internal_decision_laya_newengine",
+      "internal_decision_laya_test",
+      "internal_decision_laya_test_testdecide_clifallback",
+      "internal_decision_laya_test_testdecide_heuristicrouter",
+      "internal_decision_laya_test_testdecide_heuristictriage",
+      "internal_decision_laya_test_testdecide_httpprimary",
+      "internal_decision_laya_test_testdecideconflict",
+      "internal_decision_laya_test_testreflect",
+      "internal_forget_forget_test",
+      "internal_forget_forget_test_setuptestdb",
+      "internal_forget_forget_test_testsafeforgettingpipeline",
+      "internal_pipeline_observation",
+      "internal_pipeline_observation_consolidateobservations",
+      "internal_pipeline_observation_listobservations",
+      "internal_pipeline_observation_recordobservation",
+      "internal_pipeline_observation_rundreamcycle",
+      "internal_pipeline_pipeline_test",
+      "internal_pipeline_pipeline_test_testingestmarkdown",
+      "internal_pipeline_pipeline_test_testrecordandconsolidateobservations",
+      "internal_retrieval_graph",
+      "internal_retrieval_graph_traversegraph",
+      "internal_retrieval_retrieval_test",
+      "internal_retrieval_retrieval_test_testbm25index",
+      "internal_retrieval_retrieval_test_testgraphtraversal",
+      "internal_retrieval_retrieval_test_testhybridsearch",
+      "internal_retrieval_retrieval_test_testreciprocalrankfusion",
+      "internal_temporal_registry_newregistry",
+      "internal_temporal_registry_test",
+      "internal_temporal_registry_test_setuptestdb",
+      "internal_temporal_registry_test_testaddfact_contradictionresolution",
+      "internal_temporal_registry_test_testaddfact_simple",
+      "internal_temporal_registry_test_testgetfactsat_timetravel",
+      "internal_temporal_registry_test_testinvalidatefact",
+      "internal_temporal_registry_test_testqueryfacts_filters",
+      "pipeline_observation"
+    ],
+    "2": [
+      "embedding_builtinvectorizer",
+      "embedding_builtinvectorizer_getembedding",
+      "embedding_builtinvectorizer_projectfeature",
+      "embedding_builtinvectorizer_vectorize",
+      "embedding_httpclient",
+      "embedding_httpclient_callbge",
+      "embedding_httpclient_callollama",
+      "embedding_httpclient_getembedding",
+      "go_type_net_http_client",
+      "internal_embedding_client",
+      "internal_embedding_client_generatedeterministicpseudovector",
+      "internal_embedding_client_newbuiltinvectorizer",
+      "internal_embedding_client_newbuiltinvectorizerwithdim",
+      "internal_embedding_client_newhttpclient",
+      "internal_embedding_client_test",
+      "internal_embedding_client_test_testbuiltinvectorizer_basic",
+      "internal_embedding_client_test_testbuiltinvectorizer_subwordsemanticmatching",
+      "internal_embedding_client_test_testdeterministicpseudovector",
+      "internal_embedding_client_test_testhttpclient_bge",
+      "internal_embedding_client_test_testhttpclient_offlinefallback",
+      "internal_embedding_client_test_testhttpclient_ollamafallback",
+      "internal_embedding_math_cosinesimilarity",
+      "internal_embedding_math_test",
+      "internal_embedding_math_test_testbuiltinvectorizer_dotproductequalscosinesimilarity",
+      "internal_embedding_math_test_testcosinesimilarity"
+    ],
+    "3": [
+      "go_type_context_context",
+      "go_type_github_com_mark3labs_mcp_go_mcp_calltoolrequest",
+      "go_type_github_com_mark3labs_mcp_go_mcp_calltoolresult",
+      "internal_server_tools_go_server_server",
+      "server_server_handleaddfact",
+      "server_server_handleappendblock",
+      "server_server_handleconsolidateobservations",
+      "server_server_handledecision",
+      "server_server_handledreamcycle",
+      "server_server_handleexecuteforget",
+      "server_server_handleexplain",
+      "server_server_handlegetactivefacts",
+      "server_server_handlegetalignment",
+      "server_server_handlegetblock",
+      "server_server_handlegetbootstrap",
+      "server_server_handlegetfactsat",
+      "server_server_handlehealthcheck",
+      "server_server_handleingestmarkdown",
+      "server_server_handlelistblocks",
+      "server_server_handlerecordobservation",
+      "server_server_handlerecordrepair",
+      "server_server_handlereflect",
+      "server_server_handlereplaceblock",
+      "server_server_handlesearch",
+      "server_server_handlesetblock",
+      "server_server_handlestageforget",
+      "server_server_handlestats",
+      "server_server_registertools"
+    ],
+    "4": [
+      "cmd_bench_main",
+      "cmd_bench_main_main",
+      "cmd_bench_main_runbitemporalbenchmark",
+      "cmd_bench_main_runbm25benchmark",
+      "cmd_bench_main_runbootstrapbenchmark",
+      "cmd_bench_main_runbuiltinvectorizerbenchmark",
+      "cmd_bench_main_runhybridsearchbenchmark",
+      "cmd_bench_main_runlayabenchmark",
+      "cmd_bench_main_runnormalizerbenchmark",
+      "internal_normalizer_normalizer",
+      "internal_normalizer_normalizer_isdiacritic",
+      "internal_normalizer_normalizer_normalize",
+      "internal_normalizer_normalizer_test",
+      "internal_normalizer_normalizer_test_testnormalize",
+      "internal_normalizer_normalizer_test_testtokenize",
+      "internal_normalizer_normalizer_tokenize",
+      "internal_retrieval_bm25",
+      "internal_retrieval_bm25_newbm25index",
+      "retrieval_bm25index",
+      "retrieval_bm25index_index",
+      "retrieval_bm25index_search",
+      "retrieval_document",
+      "retrieval_scoreddoc"
+    ],
+    "5": [
+      "blocks_coreblock",
+      "blocks_manager_appendblock",
+      "blocks_manager_getblock",
+      "blocks_manager_getbootstrapprompt",
+      "blocks_manager_listblocks",
+      "blocks_manager_replaceblock",
+      "blocks_manager_seeddefaults",
+      "blocks_manager_setblock",
+      "internal_blocks_blocks",
+      "internal_blocks_blocks_go_blocks_manager",
+      "internal_blocks_blocks_parsetime"
+    ],
+    "6": [
+      "decision_engine_decide",
+      "decision_engine_decidecli",
+      "decision_engine_decideconflict",
+      "decision_engine_decideheuristic",
+      "decision_engine_decidehttp",
+      "decision_engine_reflect",
+      "decision_engine_routequery",
+      "decision_engine_triageobservation",
+      "internal_decision_laya",
+      "internal_decision_laya_appraisalmemorystate",
+      "internal_decision_laya_classifyconflict",
+      "internal_decision_laya_classifynamespace",
+      "internal_decision_laya_classifytriage",
+      "internal_decision_laya_containsword",
+      "internal_decision_laya_go_decision_engine",
+      "internal_decision_laya_matchesany",
+      "temporal_registry_withdecision"
+    ],
+    "7": [
+      "go_type_database_sql_tx",
+      "go_type_time_time",
+      "internal_temporal_registry",
+      "internal_temporal_registry_go_temporal_registry",
+      "internal_temporal_registry_parsefacttime",
+      "temporal_fact",
+      "temporal_factevidence",
+      "temporal_registry_addfact",
+      "temporal_registry_addfactwithcitation",
+      "temporal_registry_explainfact",
+      "temporal_registry_getactivefacts",
+      "temporal_registry_getfactbyidtx",
+      "temporal_registry_getfactsat",
+      "temporal_registry_invalidatefact",
+      "temporal_registry_queryfacts",
+      "temporal_registry_queryfactslist",
+      "temporal_registry_queryfactslist_1e55d4"
+    ],
+    "8": [
+      "alignment_guidanceitem",
+      "alignment_manager_addguidance",
+      "alignment_manager_generatesynthesisprompt",
+      "alignment_manager_getactiveguidance",
+      "alignment_manager_getopenrepairthreads",
+      "alignment_manager_recordrepairthread",
+      "alignment_manager_resolverepairthread",
+      "alignment_repairthread",
+      "internal_alignment_alignment",
+      "internal_alignment_alignment_go_alignment_manager",
+      "internal_alignment_alignment_newmanager",
+      "internal_alignment_alignment_parsetime"
+    ],
+    "9": [
+      "internal_config_config",
+      "internal_config_config_autodiscoverlayabin",
+      "internal_config_config_autodiscoverlayamodel",
+      "internal_config_config_expandpath",
+      "internal_config_config_fileexists",
+      "internal_config_config_findfirstexisting",
+      "internal_config_config_loadconfig",
+      "internal_config_config_test",
+      "internal_config_config_test_testexpandpath",
+      "internal_config_config_test_testloadconfig_defaults",
+      "internal_config_config_test_testloadconfig_envoverride"
+    ],
+    "10": [
+      "forget_pipeline_executeforget",
+      "forget_pipeline_istombstoned",
+      "forget_pipeline_stageforget",
+      "forget_retractionreceipt",
+      "forget_stageditem",
+      "forget_stageresult",
+      "go_type_github_com_mark3labs_mcp_go_server_mcpserver",
+      "internal_config_config_go_config_config",
+      "internal_forget_forget",
+      "internal_forget_forget_go_forget_pipeline",
+      "internal_forget_forget_newpipeline",
+      "internal_server_server",
+      "internal_server_server_go_server_server",
+      "internal_server_server_newserver",
+      "internal_server_server_servestdio",
+      "server_server_servestdio"
+    ],
+    "11": [
+      "internal_server_server_test",
+      "internal_server_server_test_getresulttext",
+      "internal_server_server_test_makecallreq",
+      "internal_server_server_test_setuptestserver",
+      "internal_server_server_test_testserver_bootstrapandblocks",
+      "internal_server_server_test_testserver_factsandtemporal",
+      "internal_server_server_test_testserver_ingestandsearchandobservations",
+      "server"
+    ],
+    "12": [
+      "flake",
+      "home_amadeus_projects_workspace_agent_memory_nix",
+      "pkg_buildgomodule",
+      "pkg_mkshell"
+    ],
+    "13": [
+      "internal_server_tools"
+    ],
+    "14": [
+      "pkg_github_com_surtr85_agent_memory"
+    ]
+  },
+  "cohesion": {
+    "0": 0.15789473684210525,
+    "1": 0.09437386569872959,
+    "2": 0.14,
+    "3": 0.24603174603174602,
+    "4": 0.15019762845849802,
+    "5": 0.36363636363636365,
+    "6": 0.21323529411764705,
+    "7": 0.27941176470588236,
+    "8": 0.3181818181818182,
+    "9": 0.36363636363636365,
+    "10": 0.2,
+    "11": 0.5714285714285714,
+    "12": 0.5,
+    "13": 1.0,
+    "14": 1.0
+  },
+  "gods": [
+    {
+      "id": "internal_server_tools_go_server_server",
+      "label": "Server",
+      "degree": 24
+    },
+    {
+      "id": "internal_decision_laya_go_decision_engine",
+      "label": "Engine",
+      "degree": 17
+    },
+    {
+      "id": "internal_temporal_registry_go_temporal_registry",
+      "label": "Registry",
+      "degree": 17
+    },
+    {
+      "id": "internal_temporal_registry_newregistry",
+      "label": "NewRegistry()",
+      "degree": 16
+    },
+    {
+      "id": "internal_db_db_open",
+      "label": "Open()",
+      "degree": 15
+    },
+    {
+      "id": "internal_db_db_initschema",
+      "label": "InitSchema()",
+      "degree": 14
+    },
+    {
+      "id": "cmd_agent_memory_main_main",
+      "label": "main()",
+      "degree": 13
+    },
+    {
+      "id": "internal_server_server_go_server_server",
+      "label": "Server",
+      "degree": 13
+    },
+    {
+      "id": "internal_server_server_newserver",
+      "label": "NewServer()",
+      "degree": 13
+    },
+    {
+      "id": "internal_decision_laya_newengine",
+      "label": "NewEngine()",
+      "degree": 13
+    }
+  ],
+  "surprises": [
+    {
+      "source": "initDB()",
+      "target": "Config",
+      "source_files": [
+        "cmd/agent-memory/main.go",
+        "internal/config/config.go"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "main()",
+      "target": "NewManager()",
+      "source_files": [
+        "cmd/agent-memory/main.go",
+        "internal/alignment/alignment.go"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "main()",
+      "target": "LoadConfig()",
+      "source_files": [
+        "cmd/agent-memory/main.go",
+        "internal/config/config.go"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "main()",
+      "target": "NewBuiltinVectorizer()",
+      "source_files": [
+        "cmd/agent-memory/main.go",
+        "internal/embedding/client.go"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "main()",
+      "target": "NewPipeline()",
+      "source_files": [
+        "cmd/agent-memory/main.go",
+        "internal/forget/forget.go"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `Engine` connect `Community 6` to `Community 1`, `Community 2`, `Community 10`, `Community 7`?",
+      "why": "High betweenness centrality (0.102) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Registry` connect `Community 7` to `Community 1`, `Community 10`, `Community 6`?",
+      "why": "High betweenness centrality (0.095) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `Server` connect `Community 10` to `Community 0`, `Community 1`, `Community 5`, `Community 6`, `Community 7`, `Community 8`?",
+      "why": "High betweenness centrality (0.066) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `agent-memory.nix`, `pkgs.buildGoModule`, `pkgs.mkShell` to the rest of the system?",
+      "why": "4 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 1` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.09437386569872959 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 2` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.14 - nodes in this community are weakly interconnected."
+    }
+  ]
+}
