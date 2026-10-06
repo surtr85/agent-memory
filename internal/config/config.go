@@ -150,7 +150,7 @@ func LoadConfig() *Config {
 
 	layaURL := os.Getenv("AGENT_MEMORY_LAYA_URL")
 	if layaURL == "" {
-		layaURL = "http://127.0.0.1:8080/v1/systemone"
+		layaURL = "http://127.0.0.1:8089/v1/systemone"
 	}
 
 	layaModelPath := AutoDiscoverLayaModel()

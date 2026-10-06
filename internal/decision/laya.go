@@ -63,11 +63,121 @@ func (e *Engine) Decide(ctx context.Context, state string, preset string) (map[s
 	return e.decideHeuristic(state, preset)
 }
 
+func (e *Engine) getQuestionsForPreset(preset string) map[string]any {
+	switch preset {
+	case "router":
+		return map[string]any{
+			"domain": map[string]any{
+				"type":         "choice",
+				"instructions": "What domain does request belong to?",
+				"criteria": map[string]string{
+					"system":     "operating system, nixos, flakes, linux configuration, bash",
+					"code":       "software engineering, programming, refactoring, architecture, debugging",
+					"forex":      "trading, financial indicators, markets, currency pairs, economics",
+					"literature": "books, translation, obsidian, creative writing",
+					"ai":         "artificial intelligence, machine learning, embeddings, models",
+					"ecommerce":  "online shop, orders, payment, checkout, inventory",
+					"general":    "general knowledge, casual chat, miscellaneous",
+				},
+			},
+			"difficulty": map[string]any{
+				"type":         "score",
+				"instructions": "How hard is request for an AI model?",
+				"criteria": []string{
+					"trivial: a lookup or one-liner",
+					"easy: short answer, no reasoning",
+					"moderate: several steps",
+					"hard: long multi-step reasoning or specialist knowledge",
+				},
+			},
+		}
+	case "triage":
+		return map[string]any{
+			"category": map[string]any{
+				"type":         "choice",
+				"instructions": "What category best describes the observation?",
+				"criteria": map[string]string{
+					"fact":        "personal, factual, or permanent biographical information about user or environment",
+					"preference":  "user preference, setting, or styling choice",
+					"insight":     "technical learning, troubleshooting finding, or solution discovered",
+					"observation": "general operational observation or note",
+					"noise":       "temporary chit-chat, ping, or irrelevant detail",
+				},
+			},
+			"is_noise": map[string]any{
+				"type":         "noul",
+				"instructions": "Is this observation pure transient noise that should not be saved?",
+			},
+			"importance": map[string]any{
+				"type":         "score",
+				"instructions": "How important is this observation for future interactions?",
+				"criteria": []string{
+					"trivial: meaningless or temporary",
+					"low: minor detail",
+					"medium: useful context",
+					"high: critical personal fact or enduring preference",
+				},
+			},
+		}
+	case "conflict":
+		return map[string]any{
+			"is_contradiction": map[string]any{
+				"type":         "noul",
+				"instructions": "Does Fact 2 contradict, overwrite or invalidate Fact 1?",
+			},
+		}
+	case "reflect":
+		return map[string]any{
+			"cognitive_status": map[string]any{
+				"type":         "choice",
+				"instructions": "What is the cognitive state of the agent based on state?",
+				"criteria": map[string]string{
+					"optimal":  "calm, focused, routine tasks, system healthy",
+					"strained": "handling multiple complex tasks under pressure",
+					"overload": "critical failures, severe resource constraints, data loss",
+				},
+			},
+			"alert_level": map[string]any{
+				"type":         "choice",
+				"instructions": "What alert level should be assigned to state?",
+				"criteria": map[string]string{
+					"normal":   "routine execution, no immediate risk",
+					"elevated": "monitoring active operations, pending changes, or caution required",
+					"critical": "critical errors, data loss risk, urgent action needed",
+				},
+			},
+			"focus": map[string]any{
+				"type":         "choice",
+				"instructions": "What is the primary operational focus in state?",
+				"criteria": map[string]string{
+					"system":     "operating system, nixos, flakes, configuration",
+					"forex":      "trading, financial indicators, markets, currency pairs",
+					"literature": "translation, books, obsidian, writing",
+					"general":    "general queries, chat, miscellaneous",
+				},
+			},
+		}
+	default:
+		return map[string]any{
+			"domain": map[string]any{
+				"type":         "choice",
+				"instructions": "What category does state belong to?",
+				"criteria": map[string]string{
+					"system":  "system",
+					"general": "general",
+				},
+			},
+		}
+	}
+}
+
 func (e *Engine) decideHTTP(ctx context.Context, state string, preset string) (map[string]any, error) {
-	reqBody, err := json.Marshal(map[string]string{
-		"state":  state,
-		"preset": preset,
-	})
+	payload := map[string]any{
+		"state":     state,
+		"preset":    preset,
+		"questions": e.getQuestionsForPreset(preset),
+	}
+	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -197,6 +307,25 @@ func (e *Engine) TriageObservation(ctx context.Context, content string) (string,
 		importance = val
 	}
 
+	// Check if Laya model returned answers structure
+	if answers, ok := res["answers"].(map[string]any); ok {
+		if catObj, ok := answers["category"].(map[string]any); ok {
+			if choice, ok := catObj["choice"].(string); ok && choice != "" {
+				category = choice
+			}
+		}
+		if noiseObj, ok := answers["is_noise"].(map[string]any); ok {
+			if noul, ok := noiseObj["noul"].(float64); ok {
+				isNoise = noul > 0.5
+			}
+		}
+		if impObj, ok := answers["importance"].(map[string]any); ok {
+			if score, ok := impObj["score"].(float64); ok {
+				importance = score
+			}
+		}
+	}
+
 	return category, isNoise, importance, nil
 }
 
@@ -219,6 +348,18 @@ func (e *Engine) DecideConflict(ctx context.Context, existingFact, newFact strin
 		isContradiction = val
 	}
 
+	// Check if Laya model returned answers structure
+	if answers, ok := res["answers"].(map[string]any); ok {
+		if contraObj, ok := answers["is_contradiction"].(map[string]any); ok {
+			if noul, ok := contraObj["noul"].(float64); ok {
+				isContradiction = noul > 0.5
+			}
+			if conf, ok := contraObj["confidence"].(float64); ok {
+				confidence = conf
+			}
+		}
+	}
+
 	if val, ok := res["confidence"].(float64); ok {
 		confidence = val
 	}
@@ -231,7 +372,54 @@ func (e *Engine) Reflect(ctx context.Context, memoryState string) (map[string]an
 	if strings.TrimSpace(memoryState) == "" {
 		memoryState = "current agent status: idle"
 	}
-	return e.Decide(ctx, memoryState, "reflect")
+	res, err := e.Decide(ctx, memoryState, "reflect")
+	if err != nil {
+		return e.decideHeuristic(memoryState, "reflect")
+	}
+
+	// If HTTP/CLI returned Laya answers structure, format it nicely
+	if answers, ok := res["answers"].(map[string]any); ok {
+		status := "optimal"
+		alertLevel := "normal"
+		focus := "system"
+
+		if cogObj, ok := answers["cognitive_status"].(map[string]any); ok {
+			if choice, ok := cogObj["choice"].(string); ok && choice != "" {
+				status = choice
+			}
+		}
+		if alertObj, ok := answers["alert_level"].(map[string]any); ok {
+			if choice, ok := alertObj["choice"].(string); ok && choice != "" {
+				alertLevel = choice
+			}
+		}
+		if focusObj, ok := answers["focus"].(map[string]any); ok {
+			if choice, ok := focusObj["choice"].(string); ok && choice != "" {
+				focus = choice
+			}
+		}
+
+		recs := []string{}
+		switch alertLevel {
+		case "critical":
+			recs = append(recs, "Address critical system failures immediately", "Halt automated executions")
+		case "elevated":
+			recs = append(recs, "Inspect failing services and review recent logs", "Ensure dotfiles and system flake remain synchronized")
+		default:
+			recs = append(recs, "System operating within optimal parameters", "Proceed with scheduled autonomous tasks")
+		}
+
+		return map[string]any{
+			"cognitive_status": status,
+			"alert_level":      alertLevel,
+			"focus":            focus,
+			"recommendations":  recs,
+			"timestamp":        time.Now().UTC().Format(time.RFC3339),
+			"source":           "laya-vulkan",
+		}, nil
+	}
+
+	return res, nil
 }
 
 // decideHeuristic provides deterministic fallback when HTTP and CLI are unavailable.

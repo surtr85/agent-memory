@@ -34,7 +34,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	if cfg.LogLevel != "INFO" {
 		t.Errorf("unexpected LogLevel: %s", cfg.LogLevel)
 	}
-	if cfg.LayaURL != "http://127.0.0.1:8080/v1/systemone" {
+	if cfg.LayaURL != "http://127.0.0.1:8089/v1/systemone" {
 		t.Errorf("unexpected LayaURL: %s", cfg.LayaURL)
 	}
 	if cfg.LayaModelPath != "/home/amadeus/Projects/laya/models/laya_multilingual_q8_0.gguf" {
