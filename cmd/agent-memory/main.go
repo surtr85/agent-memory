@@ -260,6 +260,7 @@ func main() {
 			} else {
 				// Get active facts for all namespaces
 				query := `SELECT id, namespace, subject, predicate, object, confidence, source,
+				          source_uri, source_quote, line_number, salience,
 				          valid_from, valid_until, recorded_at, invalidated_at, superseded_by
 				          FROM facts WHERE valid_until IS NULL ORDER BY recorded_at DESC`
 				facts, err = reg.QueryFactsList(query)
