@@ -1,7 +1,10 @@
 # 🧠 AgentMemory Universal (`agent-memory`)
 
 <p align="center">
-  <img src="assets/banner.svg" alt="AgentMemory Universal Banner" width="100%">
+  <picture>
+    <source type="image/svg+xml" srcset="assets/banner.svg">
+    <img src="assets/banner.png" alt="AgentMemory Universal Banner" width="100%">
+  </picture>
 </p>
 
 <p align="center">
