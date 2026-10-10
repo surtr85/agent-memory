@@ -36,8 +36,14 @@ func NewServer(db *sql.DB, cfg *config.Config) *Server {
 		server.WithDescription("AgentMemory Universal (v3.0) Cognitive Engine - Pure Go Local Memory"),
 	)
 
-	// Default to Pure Go Builtin Semantic Vectorizer
-	embClient := embedding.NewBuiltinVectorizer()
+	// Initialize embedding client: prefer configured HTTP endpoint (llama-server / OpenAI / BGE / Ollama)
+	// with automatic pure Go subword vectorizer fallback.
+	var embClient embedding.Client
+	if cfg.EmbeddingURL != "" || cfg.OllamaURL != "" {
+		embClient = embedding.NewHTTPClient(cfg.EmbeddingURL, cfg.OllamaURL, cfg.EmbeddingModel, cfg.EmbeddingDimensions)
+	} else {
+		embClient = embedding.NewBuiltinVectorizer()
+	}
 	decEngine := decision.NewEngine(cfg)
 	s := &Server{
 		MCPServer: mcpServer,

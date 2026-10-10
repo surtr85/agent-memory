@@ -34,10 +34,10 @@ func NewEngine(cfg *config.Config) *Engine {
 }
 
 // Decide executes a decision against Laya System-1:
-// 1. First attempts HTTP POST to cfg.LayaURL with {"state": state, "preset": preset}.
-// 2. If HTTP fails or is unreachable, checks if cfg.LayaBinPath and cfg.LayaModelPath exist on disk.
-//    If yes, runs: exec.CommandContext(ctx, cfg.LayaBinPath, "decide", cfg.LayaModelPath, "--preset", preset, "--state", state, "--json") and parses JSON stdout.
-// 3. If neither works, falls back to deterministic heuristic rules.
+//  1. First attempts HTTP POST to cfg.LayaURL with {"state": state, "preset": preset}.
+//  2. If HTTP fails or is unreachable, checks if cfg.LayaBinPath and cfg.LayaModelPath exist on disk.
+//     If yes, runs: exec.CommandContext(ctx, cfg.LayaBinPath, "decide", cfg.LayaModelPath, "--preset", preset, "--state", state, "--json") and parses JSON stdout.
+//  3. If neither works, falls back to deterministic heuristic rules.
 func (e *Engine) Decide(ctx context.Context, state string, preset string) (map[string]any, error) {
 	// 1. Try HTTP POST
 	if e.cfg.LayaURL != "" {

@@ -32,15 +32,15 @@ type Fact struct {
 
 // FactEvidence represents the explainability envelope for a claim.
 type FactEvidence struct {
-	Fact            Fact      `json:"fact"`
-	EvidenceQuote   string    `json:"evidence_quote"`
-	SourceURI       string    `json:"source_uri"`
-	LineNumber      int       `json:"line_number"`
-	Confidence      float64   `json:"confidence"`
-	Salience        float64   `json:"salience"`
-	Status          string    `json:"status"` // 'active', 'superseded', 'retracted'
-	SupersededByID  *string   `json:"superseded_by_id,omitempty"`
-	ChainHistory    []Fact    `json:"chain_history,omitempty"`
+	Fact           Fact    `json:"fact"`
+	EvidenceQuote  string  `json:"evidence_quote"`
+	SourceURI      string  `json:"source_uri"`
+	LineNumber     int     `json:"line_number"`
+	Confidence     float64 `json:"confidence"`
+	Salience       float64 `json:"salience"`
+	Status         string  `json:"status"` // 'active', 'superseded', 'retracted'
+	SupersededByID *string `json:"superseded_by_id,omitempty"`
+	ChainHistory   []Fact  `json:"chain_history,omitempty"`
 }
 
 // Registry handles bi-temporal fact storage, contradiction resolution, and queries.
@@ -63,9 +63,9 @@ func (r *Registry) WithDecision(engine *decision.Engine) *Registry {
 // AddFact inserts a new fact into the bi-temporal registry.
 // Contradiction resolution:
 // If an active fact (`valid_until IS NULL`) exists with identical `namespace`, `subject`, and `predicate`:
-// - If the object is identical, we can either return the existing fact or ignore.
-// - If the object differs, mark the old fact's `valid_until = now()`, `invalidated_at = now()`,
-//   `superseded_by = newFact.ID`.
+//   - If the object is identical, we can either return the existing fact or ignore.
+//   - If the object differs, mark the old fact's `valid_until = now()`, `invalidated_at = now()`,
+//     `superseded_by = newFact.ID`.
 func (r *Registry) AddFact(namespace, subject, predicate, object, source string) (*Fact, error) {
 	return r.AddFactWithCitation(namespace, subject, predicate, object, source, "", "", 0, 0.5)
 }

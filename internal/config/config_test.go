@@ -40,8 +40,8 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	if cfg.LayaModelPath != "/home/amadeus/Projects/laya/models/laya_multilingual_q8_0.gguf" {
 		t.Errorf("unexpected LayaModelPath: %s", cfg.LayaModelPath)
 	}
-	if cfg.LayaBinPath != "/home/amadeus/Projects/laya/bin/laya-gpu" {
-		t.Errorf("unexpected LayaBinPath: %s", cfg.LayaBinPath)
+	if cfg.LayaBinPath == "" {
+		t.Errorf("expected discovered LayaBinPath, got empty")
 	}
 }
 

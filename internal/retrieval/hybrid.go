@@ -13,16 +13,16 @@ import (
 
 // SearchResult represents a unified retrieved chunk or atomic fact.
 type SearchResult struct {
-	ID          string     `json:"id"`
-	Type        string     `json:"type"` // "chunk" or "fact"
-	Namespace   string     `json:"namespace"`
-	Title       string     `json:"title,omitempty"`
-	Content     string     `json:"content"`
-	SourceURI   string     `json:"source_uri,omitempty"`
-	LineNumber  int        `json:"line_number,omitempty"`
-	Score       float64    `json:"score"`
-	ValidFrom   time.Time  `json:"valid_from,omitempty"`
-	ValidUntil  *time.Time `json:"valid_until,omitempty"`
+	ID         string     `json:"id"`
+	Type       string     `json:"type"` // "chunk" or "fact"
+	Namespace  string     `json:"namespace"`
+	Title      string     `json:"title,omitempty"`
+	Content    string     `json:"content"`
+	SourceURI  string     `json:"source_uri,omitempty"`
+	LineNumber int        `json:"line_number,omitempty"`
+	Score      float64    `json:"score"`
+	ValidFrom  time.Time  `json:"valid_from,omitempty"`
+	ValidUntil *time.Time `json:"valid_until,omitempty"`
 }
 
 // Searcher coordinates dense vector, BM25, graph, and temporal retrieval.

@@ -179,4 +179,24 @@ func TestGetBootstrapPrompt(t *testing.T) {
 	if !strings.Contains(prompt, "<environment>") || !strings.Contains(prompt, "</environment>") {
 		t.Errorf("prompt missing <environment> tag: %s", prompt)
 	}
+
+	// Add domain-specific block
+	if err := mgr.SetBlock("konkur_1405", "Biology syllabus details"); err != nil {
+		t.Fatalf("SetBlock failed: %v", err)
+	}
+
+	// Default bootstrap should NOT dump domain block content directly
+	defaultPrompt, _ := mgr.GetBootstrapPrompt()
+	if strings.Contains(defaultPrompt, "Biology syllabus details") {
+		t.Errorf("default prompt should not dump domain block content directly: %s", defaultPrompt)
+	}
+	if !strings.Contains(defaultPrompt, "Domain blocks available on demand via memory_get_block: konkur_1405") {
+		t.Errorf("default prompt should mention domain block available on demand: %s", defaultPrompt)
+	}
+
+	// Scoped with includeDomain = true should include it
+	fullPrompt, _ := mgr.GetBootstrapPromptScoped(true)
+	if !strings.Contains(fullPrompt, "<konkur_1405>") {
+		t.Errorf("scoped prompt with includeDomain=true should include konkur_1405: %s", fullPrompt)
+	}
 }

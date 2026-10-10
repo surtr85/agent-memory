@@ -137,8 +137,22 @@ func (m *Manager) ListBlocks() ([]CoreBlock, error) {
 	return blocks, nil
 }
 
+// CoreBootstrapLabels define the essential system working blocks that should always bootstrap.
+var CoreBootstrapLabels = map[string]bool{
+	"persona":       true,
+	"human":         true,
+	"environment":   true,
+	"session_state": true,
+	"system":        true,
+}
+
 // GetBootstrapPrompt generates compact markdown for agent system prompt injection (< 400 tokens).
 func (m *Manager) GetBootstrapPrompt() (string, error) {
+	return m.GetBootstrapPromptScoped(false)
+}
+
+// GetBootstrapPromptScoped generates bootstrap prompt with optional domain blocks inclusion and token truncation.
+func (m *Manager) GetBootstrapPromptScoped(includeDomain bool) (string, error) {
 	blocks, err := m.ListBlocks()
 	if err != nil {
 		return "", err
@@ -150,9 +164,34 @@ func (m *Manager) GetBootstrapPrompt() (string, error) {
 
 	var sb strings.Builder
 	sb.WriteString("### Core Memory Context\n")
+
+	var domainLabels []string
+
 	for _, b := range blocks {
-		sb.WriteString(fmt.Sprintf("<%s>\n%s\n</%s>\n", b.Label, strings.TrimSpace(b.Content), b.Label))
+		label := strings.ToLower(b.Label)
+		isCore := CoreBootstrapLabels[label]
+
+		if !isCore && !includeDomain {
+			domainLabels = append(domainLabels, b.Label)
+			continue
+		}
+
+		content := strings.TrimSpace(b.Content)
+		maxChars := b.MaxTokens * 4
+		if maxChars <= 0 {
+			maxChars = 2000
+		}
+		if len(content) > maxChars {
+			content = content[:maxChars] + "\n... [truncated for token budget]"
+		}
+
+		sb.WriteString(fmt.Sprintf("<%s>\n%s\n</%s>\n", b.Label, content, b.Label))
 	}
+
+	if len(domainLabels) > 0 && !includeDomain {
+		sb.WriteString(fmt.Sprintf("<!-- Domain blocks available on demand via memory_get_block: %s -->\n", strings.Join(domainLabels, ", ")))
+	}
+
 	return strings.TrimSpace(sb.String()), nil
 }
 

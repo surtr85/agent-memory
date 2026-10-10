@@ -23,9 +23,9 @@ type BM25Index struct {
 	k1 float64
 	b  float64
 
-	docCount   int
+	docCount    int
 	totalDocLen int
-	avgDocLen  float64
+	avgDocLen   float64
 
 	docLens map[string]int
 	// docFrequencies: term -> number of documents containing term

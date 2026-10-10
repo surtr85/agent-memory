@@ -88,16 +88,32 @@ func ListObservations(db *sql.DB, namespace string) ([]Observation, error) {
 }
 
 var (
-	// Matches triples like "User prefers Neovim" or "Niri is a Wayland compositor"
-	// format: [Subject] [predicate] [Object]
-	factPattern = regexp.MustCompile(`^([\w\.\-]+)\s+([\w\.\-]+)\s+(.+)$`)
+	arrowTripleRegex   = regexp.MustCompile(`^\s*(.+?)\s*->\s*(.+?)\s*->\s*(.+?)\s*$`)
+	pipeTripleRegex    = regexp.MustCompile(`^\s*([^|]+)\s*\|\s*([^|]+)\s*\|\s*([^|]+)\s*$`)
+	unicodeFactPattern = regexp.MustCompile(`^([\p{L}\p{N}\.\-\_]+)\s+([\p{L}\p{N}\.\-\_]+)\s+(.+)$`)
 )
+
+// ParseTriple extracts Subject, Predicate, and Object from text supporting
+// arrows ("A -> B -> C"), pipes ("A | B | C"), or natural language tokens in English/Persian.
+func ParseTriple(content string) (subject, predicate, object string, ok bool) {
+	trimmed := strings.TrimSpace(content)
+	if m := arrowTripleRegex.FindStringSubmatch(trimmed); len(m) == 4 {
+		return strings.TrimSpace(m[1]), strings.TrimSpace(m[2]), strings.TrimSpace(m[3]), true
+	}
+	if m := pipeTripleRegex.FindStringSubmatch(trimmed); len(m) == 4 {
+		return strings.TrimSpace(m[1]), strings.TrimSpace(m[2]), strings.TrimSpace(m[3]), true
+	}
+	if m := unicodeFactPattern.FindStringSubmatch(trimmed); len(m) == 4 {
+		return strings.TrimSpace(m[1]), strings.TrimSpace(m[2]), strings.TrimSpace(m[3]), true
+	}
+	return "", "", "", false
+}
 
 // ConsolidateObservations processes all 'unconsolidated' observations:
 // - Parses actionable signals into active facts (bi-temporal registry) or core blocks
 // - Marks processed observations as 'consolidated'
 func ConsolidateObservations(db *sql.DB) error {
-	rows, err := db.Query(`SELECT id, category, content, namespace FROM observations WHERE status = 'unconsolidated'`)
+	rows, err := db.Query(`SELECT id, category, content, namespace, COALESCE(source_uri, ''), COALESCE(line_number, 0) FROM observations WHERE status = 'unconsolidated'`)
 	if err != nil {
 		return fmt.Errorf("failed fetching unconsolidated observations: %w", err)
 	}
@@ -108,11 +124,13 @@ func ConsolidateObservations(db *sql.DB) error {
 		category  string
 		content   string
 		namespace string
+		sourceURI string
+		lineNo    int
 	}
 	var pending []obsRecord
 	for rows.Next() {
 		var o obsRecord
-		if err := rows.Scan(&o.id, &o.category, &o.content, &o.namespace); err != nil {
+		if err := rows.Scan(&o.id, &o.category, &o.content, &o.namespace, &o.sourceURI, &o.lineNo); err != nil {
 			return err
 		}
 		pending = append(pending, o)
@@ -127,6 +145,7 @@ func ConsolidateObservations(db *sql.DB) error {
 	blockMgr := blocks.NewManager(db)
 
 	for _, p := range pending {
+		sourceRef := "observation:" + p.id
 		switch strings.ToLower(p.category) {
 		case "human", "persona", "environment", "scratchpad":
 			// Update core block
@@ -134,27 +153,19 @@ func ConsolidateObservations(db *sql.DB) error {
 
 		case "fact", "assertion":
 			// Parse triple
-			matches := factPattern.FindStringSubmatch(p.content)
-			if len(matches) == 4 {
-				subj := strings.TrimSpace(matches[1])
-				pred := strings.TrimSpace(matches[2])
-				obj := strings.TrimSpace(matches[3])
-				_, _ = reg.AddFact(p.namespace, subj, pred, obj, "observation:"+p.id)
+			if subj, pred, obj, ok := ParseTriple(p.content); ok {
+				_, _ = reg.AddFactWithCitation(p.namespace, subj, pred, obj, sourceRef, p.sourceURI, p.content, p.lineNo, 0.7)
 			} else {
 				// Fallback triple
-				_, _ = reg.AddFact(p.namespace, "System", "observed", p.content, "observation:"+p.id)
+				_, _ = reg.AddFactWithCitation(p.namespace, "System", "observed", p.content, sourceRef, p.sourceURI, p.content, p.lineNo, 0.5)
 			}
 
 		default:
 			// General category: try parsing triple, if not store as observed fact
-			matches := factPattern.FindStringSubmatch(p.content)
-			if len(matches) == 4 {
-				subj := strings.TrimSpace(matches[1])
-				pred := strings.TrimSpace(matches[2])
-				obj := strings.TrimSpace(matches[3])
-				_, _ = reg.AddFact(p.namespace, subj, pred, obj, "observation:"+p.id)
+			if subj, pred, obj, ok := ParseTriple(p.content); ok {
+				_, _ = reg.AddFactWithCitation(p.namespace, subj, pred, obj, sourceRef, p.sourceURI, p.content, p.lineNo, 0.6)
 			} else {
-				_, _ = reg.AddFact(p.namespace, "System", "noted", p.content, "observation:"+p.id)
+				_, _ = reg.AddFactWithCitation(p.namespace, "System", "noted", p.content, sourceRef, p.sourceURI, p.content, p.lineNo, 0.4)
 			}
 		}
 
@@ -239,10 +250,10 @@ func RunDreamCycle(db *sql.DB, dateStr string) (*DreamCycleResult, error) {
 	}
 
 	return &DreamCycleResult{
-		DreamDate:         dateStr,
+		DreamDate:          dateStr,
 		ObservationsMerged: len(pending),
-		FactsCreated:      factsCreated,
-		ProseContent:      prose,
-		SynthesisMarkdown: synthesis,
+		FactsCreated:       factsCreated,
+		ProseContent:       prose,
+		SynthesisMarkdown:  synthesis,
 	}, nil
 }

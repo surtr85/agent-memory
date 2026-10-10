@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgentMemory Universal — Cognitive Hub</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --surface: #12141c;
+      --surface-border: #1e2230;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Vazirmatn", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--surface-border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+    .brand span.badge {
+      font-size: 0.72rem;
+      background: var(--accent-glow);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 500;
+    }
+    nav {
+      display: flex;
+      gap: 8px;
+    }
+    nav button {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    nav button:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    nav button.active {
+      background: var(--surface-border);
+      color: var(--text);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+    .tab-content {
+      display: none;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+    }
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      padding: 12px 24px;
+      background: rgba(18, 20, 28, 0.6);
+      border-bottom: 1px solid var(--surface-border);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .stats-item strong {
+      color: var(--text);
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    /* Graph View */
+    #graph-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: radial-gradient(circle at center, #111422 0%, #090a0f 100%);
+    }
+    #graph-svg {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+    #graph-svg:active { cursor: grabbing; }
+    .graph-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 320px;
+      background: rgba(18, 20, 28, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 0.85rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      display: none;
+    }
+    .graph-panel h3 { margin-bottom: 8px; font-size: 1rem; color: #818cf8; }
+    .graph-panel p { margin-bottom: 6px; color: var(--text-muted); word-break: break-all; }
+
+    /* Core Blocks View */
+    .blocks-container {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+    .blocks-sidebar {
+      width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--surface-border);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .block-nav-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      transition: background 0.15s ease;
+      display: flex;
+      justify-content: space-between;
+    }
+    .block-nav-item:hover { background: rgba(255,255,255,0.03); color: var(--text); }
+    .block-nav-item.active { background: var(--accent-glow); color: #818cf8; font-weight: 600; }
+    .block-editor-area {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--bg);
+    }
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    textarea.block-editor {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 16px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9rem;
+      resize: none;
+      outline: none;
+    }
+    textarea.block-editor:focus { border-color: var(--accent); }
+    .btn {
+      background: var(--accent);
+      border: none;
+      color: white;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: opacity 0.15s ease;
+    }
+    .btn:hover { opacity: 0.9; }
+
+    /* Facts View */
+    .facts-container {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+    .fact-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .fact-card.superseded {
+      opacity: 0.45;
+      border-color: #332020;
+    }
+    .fact-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+    .fact-triple {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .fact-triple .subj { color: #38bdf8; }
+    .fact-triple .pred { color: #f472b6; font-size: 0.9rem; font-weight: 400; }
+    .fact-triple .obj { color: #4ade80; }
+    .fact-evidence {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-left: 2px solid var(--surface-border);
+      padding-left: 8px;
+      margin-top: 4px;
+    }
+
+    /* Search View */
+    .search-container {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .search-box {
+      display: flex;
+      gap: 8px;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .search-result {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .search-result .type-badge {
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.06);
+      width: fit-content;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      🧠 AgentMemory Universal
+      <span class="badge">v3.5 Native Pure Go</span>
+    </div>
+    <nav>
+      <button class="active" onclick="switchTab('graph')">🕸️ Knowledge Graph</button>
+      <button onclick="switchTab('blocks')">🧩 Core Blocks (Letta)</button>
+      <button onclick="switchTab('facts')">⏳ Bi-Temporal Facts</button>
+      <button onclick="switchTab('search')">⚡ Hybrid Search</button>
+    </nav>
+  </header>
+
+  <div class="stats-bar" id="stats-bar">
+    <div class="stats-item">Active Facts: <strong id="stat-active-facts">-</strong></div>
+    <div class="stats-item">Total Facts: <strong id="stat-total-facts">-</strong></div>
+    <div class="stats-item">Entities: <strong id="stat-entities">-</strong></div>
+    <div class="stats-item">Graph Relations: <strong id="stat-relations">-</strong></div>
+    <div class="stats-item">Core Blocks: <strong id="stat-blocks">-</strong></div>
+    <div class="stats-item">Embedded Chunks: <strong id="stat-chunks">-</strong></div>
+  </div>
+
+  <main>
+    <!-- Graph Tab -->
+    <div class="tab-content active" id="tab-graph">
+      <div id="graph-container">
+        <svg id="graph-svg"></svg>
+        <div class="graph-panel" id="graph-panel">
+          <h3 id="panel-title">Node Info</h3>
+          <p><strong>Type:</strong> <span id="panel-type"></span></p>
+          <p><strong>Namespace:</strong> <span id="panel-ns"></span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Core Blocks Tab -->
+    <div class="tab-content" id="tab-blocks">
+      <div class="blocks-container">
+        <div class="blocks-sidebar" id="blocks-sidebar"></div>
+        <div class="block-editor-area">
+          <div class="editor-header">
+            <h2 id="active-block-title">Select a Block</h2>
+            <button class="btn" onclick="saveCurrentBlock()">💾 Save Block</button>
+          </div>
+          <textarea class="block-editor" id="block-content-editor" placeholder="Block content..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Facts Tab -->
+    <div class="tab-content" id="tab-facts">
+      <div class="facts-container" id="facts-list"></div>
+    </div>
+
+    <!-- Search Tab -->
+    <div class="tab-content" id="tab-search">
+      <div class="search-container">
+        <div class="search-box">
+          <input type="text" class="search-input" id="search-query" placeholder="Ask memory (e.g. compositor, user preferences, literature)..." onkeydown="if(event.key==='Enter') executeSearch()">
+          <button class="btn" onclick="executeSearch()">🔍 4-Way Search</button>
+        </div>
+        <div id="search-results" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let activeBlockLabel = null;
+    let allBlocks = [];
+
+    function switchTab(name) {
+      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + name).classList.add('active');
+
+      if (name === 'graph') loadGraph();
+      if (name === 'blocks') loadBlocks();
+      if (name === 'facts') loadFacts();
+    }
+
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const d = await res.json();
+        document.getElementById('stat-active-facts').textContent = d.facts_active;
+        document.getElementById('stat-total-facts').textContent = d.facts_total;
+        document.getElementById('stat-entities').textContent = d.entities_count;
+        document.getElementById('stat-relations').textContent = d.relations_count;
+        document.getElementById('stat-blocks').textContent = d.blocks_count;
+        document.getElementById('stat-chunks').textContent = d.chunks_count;
+      } catch (e) { console.error(e); }
+    }
+
+    /* --- Graph Rendering --- */
+    let simulation = null;
+    async function loadGraph() {
+      const svg = d3.select("#graph-svg");
+      svg.selectAll("*").remove();
+
+      const container = document.getElementById("graph-container");
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      const g = svg.append("g");
+      const zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (e) => g.attr("transform", e.transform));
+      svg.call(zoom);
+
+      const res = await fetch('/api/graph');
+      const data = await res.json();
+      if (!data.nodes || data.nodes.length === 0) return;
+
+      simulation = d3.forceSimulation(data.nodes)
+        .force("link", d3.forceLink(data.links).id(d => d.id).distance(75))
+        .force("charge", d3.forceManyBody().strength(-140))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collision", d3.forceCollide().radius(22));
+
+      const link = g.append("g")
+        .selectAll("line")
+        .data(data.links)
+        .join("line")
+        .attr("stroke", "#2a3045")
+        .attr("stroke-opacity", 0.6)
+        .attr("stroke-width", d => Math.max(1, (d.weight || 1) * 1.5));
+
+      const node = g.append("g")
+        .selectAll("g")
+        .data(data.nodes)
+        .join("g")
+        .call(d3.drag()
+          .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+          .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
+          .on("end", (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+        );
+
+      node.append("circle")
+        .attr("r", d => d.type === 'concept' ? 8 : (d.type === 'subject' ? 7 : 5))
+        .attr("fill", d => {
+          if (d.type === 'concept') return "#818cf8";
+          if (d.type === 'subject') return "#38bdf8";
+          if (d.type === 'section') return "#f472b6";
+          return "#4ade80";
+        })
+        .attr("stroke", "#12141c")
+        .attr("stroke-width", 2);
+
+      node.append("text")
+        .text(d => d.label)
+        .attr("x", 10)
+        .attr("y", 3)
+        .attr("fill", "#94a3b8")
+        .attr("font-size", "10px")
+        .attr("font-family", "sans-serif");
+
+      node.on("click", (e, d) => {
+        document.getElementById('graph-panel').style.display = 'block';
+        document.getElementById('panel-title').textContent = d.label;
+        document.getElementById('panel-type').textContent = d.type;
+        document.getElementById('panel-ns').textContent = d.namespace;
+      });
+
+      simulation.on("tick", () => {
+        link
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+        node.attr("transform", d => `translate(${d.x},${d.y})`);
+      });
+    }
+
+    /* --- Core Blocks --- */
+    async function loadBlocks() {
+      const res = await fetch('/api/blocks');
+      allBlocks = await res.json();
+      const sidebar = document.getElementById('blocks-sidebar');
+      sidebar.innerHTML = '';
+      allBlocks.forEach(b => {
+        const item = document.createElement('div');
+        item.className = 'block-nav-item' + (b.label === activeBlockLabel ? ' active' : '');
+        item.innerHTML = `<span>${b.label}</span>`;
+        item.onclick = () => selectBlock(b);
+        sidebar.appendChild(item);
+      });
+      if (allBlocks.length > 0 && !activeBlockLabel) {
+        selectBlock(allBlocks[0]);
+      }
+    }
+
+    function selectBlock(block) {
+      activeBlockLabel = block.label;
+      document.querySelectorAll('.block-nav-item').forEach(el => {
+        el.classList.toggle('active', el.textContent.trim() === block.label);
+      });
+      document.getElementById('active-block-title').textContent = 'Block: ' + block.label;
+      document.getElementById('block-content-editor').value = block.content;
+    }
+
+    async function saveCurrentBlock() {
+      if (!activeBlockLabel) return;
+      const content = document.getElementById('block-content-editor').value;
+      const res = await fetch('/api/blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: activeBlockLabel, content })
+      });
+      if (res.ok) {
+        alert('Block saved successfully!');
+        loadBlocks();
+        fetchStats();
+      }
+    }
+
+    /* --- Facts --- */
+    async function loadFacts() {
+      const res = await fetch('/api/facts?active=false');
+      const facts = await res.json();
+      const container = document.getElementById('facts-list');
+      container.innerHTML = '';
+      facts.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'fact-card' + (f.is_active ? '' : ' superseded');
+        card.innerHTML = `
+          <div class="fact-header">
+            <span>[${f.namespace}] ${f.is_active ? '🟢 Active' : '🔴 Superseded'}</span>
+            <span>Recorded: ${new Date(f.recorded_at).toLocaleDateString()}</span>
+          </div>
+          <div class="fact-triple">
+            <span class="subj">${f.subject}</span>
+            <span class="pred">${f.predicate}</span>
+            <span class="obj">${f.object}</span>
+          </div>
+          ${f.source_quote ? `<div class="fact-evidence">"${f.source_quote}"</div>` : ''}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    /* --- Search --- */
+    async function executeSearch() {
+      const query = document.getElementById('search-query').value.trim();
+      if (!query) return;
+      const res = await fetch('/api/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, top_k: 6 })
+      });
+      const results = await res.json();
+      const container = document.getElementById('search-results');
+      container.innerHTML = '';
+      if (!results || results.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted)">No matches found.</p>';
+        return;
+      }
+      results.forEach(r => {
+        const item = document.createElement('div');
+        item.className = 'search-result';
+        item.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="type-badge">[${r.type.toUpperCase()}] ${r.namespace}</span>
+            <span style="font-size:0.75rem; color:#818cf8;">RRF Score: ${r.score.toFixed(4)}</span>
+          </div>
+          ${r.title ? `<strong style="font-size:0.95rem;">${r.title}</strong>` : ''}
+          <div style="font-size:0.88rem; color:var(--text-muted);">${r.content}</div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Init
+    fetchStats();
+    loadGraph();
+  </script>
+</body>
+</html>

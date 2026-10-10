@@ -4,18 +4,21 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 // Config represents runtime configuration for AgentMemory Universal.
 type Config struct {
-	DBPath        string
-	EmbeddingURL  string
-	OllamaURL     string
-	LogLevel      string
-	LayaURL       string
-	LayaModelPath string
-	LayaBinPath   string
+	DBPath              string
+	EmbeddingURL        string
+	EmbeddingModel      string
+	EmbeddingDimensions int
+	OllamaURL           string
+	LogLevel            string
+	LayaURL             string
+	LayaModelPath       string
+	LayaBinPath         string
 }
 
 // ExpandPath expands leading ~ to user's home directory.
@@ -138,6 +141,18 @@ func LoadConfig() *Config {
 		embeddingURL = "http://127.0.0.1:8088/embedding"
 	}
 
+	embeddingModel := os.Getenv("AGENT_MEMORY_EMBEDDING_MODEL")
+	if embeddingModel == "" {
+		embeddingModel = "embeddinggemma"
+	}
+
+	embeddingDim := 256
+	if dimStr := os.Getenv("AGENT_MEMORY_EMBEDDING_DIM"); dimStr != "" {
+		if d, err := strconv.Atoi(dimStr); err == nil && d > 0 {
+			embeddingDim = d
+		}
+	}
+
 	ollamaURL := os.Getenv("AGENT_MEMORY_OLLAMA_URL")
 	if ollamaURL == "" {
 		ollamaURL = "http://127.0.0.1:11434"
@@ -157,12 +172,14 @@ func LoadConfig() *Config {
 	layaBinPath := AutoDiscoverLayaBin()
 
 	return &Config{
-		DBPath:        dbPath,
-		EmbeddingURL:  embeddingURL,
-		OllamaURL:     ollamaURL,
-		LogLevel:      logLevel,
-		LayaURL:       layaURL,
-		LayaModelPath: layaModelPath,
-		LayaBinPath:   layaBinPath,
+		DBPath:              dbPath,
+		EmbeddingURL:        embeddingURL,
+		EmbeddingModel:      embeddingModel,
+		EmbeddingDimensions: embeddingDim,
+		OllamaURL:           ollamaURL,
+		LogLevel:            logLevel,
+		LayaURL:             layaURL,
+		LayaModelPath:       layaModelPath,
+		LayaBinPath:         layaBinPath,
 	}
 }

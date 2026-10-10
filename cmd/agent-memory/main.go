@@ -21,14 +21,16 @@ import (
 	"github.com/surtr85/agent-memory/internal/retrieval"
 	"github.com/surtr85/agent-memory/internal/server"
 	"github.com/surtr85/agent-memory/internal/temporal"
+	"github.com/surtr85/agent-memory/internal/web"
 )
 
-const version = "3.0.0"
+const version = "3.5.0"
 
 func printHelp() {
-	fmt.Println(`AgentMemory Universal (v3.0.0) — High-Performance Pure Go Cognitive Memory
+	fmt.Println(`AgentMemory Universal (v3.5.0) — High-Performance Pure Go Cognitive Memory
 
 Usage:
+  agent-memory ui [--port 3200]                  Launch embedded web dashboard & knowledge graph
   agent-memory serve                             Start stdio FastMCP server
   agent-memory bootstrap                         Print compact working memory prompt for prompt injection
   agent-memory search <query> [--ns <ns>] [--top <k>] [--historical]
@@ -72,6 +74,13 @@ func initDB(cfg *config.Config) *sql.DB {
 	return database
 }
 
+func initEmbeddingClient(cfg *config.Config) embedding.Client {
+	if cfg.EmbeddingURL != "" || cfg.OllamaURL != "" {
+		return embedding.NewHTTPClient(cfg.EmbeddingURL, cfg.OllamaURL, cfg.EmbeddingModel, cfg.EmbeddingDimensions)
+	}
+	return embedding.NewBuiltinVectorizer()
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		printHelp()
@@ -93,6 +102,26 @@ func main() {
 		defer database.Close()
 		if err := server.ServeStdio(database, cfg); err != nil {
 			fmt.Fprintf(os.Stderr, "MCP server exited with error: %v\n", err)
+			os.Exit(1)
+		}
+
+	case "ui", "dashboard", "web":
+		port := 3200
+		for i := 2; i < len(os.Args); i++ {
+			if (os.Args[i] == "--port" || os.Args[i] == "-p") && i+1 < len(os.Args) {
+				if p, err := strconv.Atoi(os.Args[i+1]); err == nil && p > 0 {
+					port = p
+				}
+				i++
+			}
+		}
+		database := initDB(cfg)
+		defer database.Close()
+		embClient := initEmbeddingClient(cfg)
+		searcher := retrieval.NewSearcher(database, embClient)
+		webServer := web.NewServer(database, cfg, searcher, port)
+		if err := webServer.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "Web server exited with error: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -146,7 +175,7 @@ func main() {
 
 		database := initDB(cfg)
 		defer database.Close()
-		embClient := embedding.NewBuiltinVectorizer()
+		embClient := initEmbeddingClient(cfg)
 		searcher := retrieval.NewSearcher(database, embClient)
 
 		results, err := searcher.Search(context.Background(), query, ns, topK, historical)
@@ -360,7 +389,7 @@ func main() {
 
 		database := initDB(cfg)
 		defer database.Close()
-		embClient := embedding.NewBuiltinVectorizer()
+		embClient := initEmbeddingClient(cfg)
 
 		info, err := os.Stat(targetPath)
 		if err != nil {

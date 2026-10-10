@@ -162,3 +162,23 @@ func TestRecordAndConsolidateObservations(t *testing.T) {
 		t.Fatalf("unexpected dream cycle result: %+v", dreamRes)
 	}
 }
+
+func TestParseTripleUnicodeAndPersian(t *testing.T) {
+	// 1. Persian natural space
+	subj, pred, obj, ok := ParseTriple("سجاد دوست_دارد برنامه_نویسی")
+	if !ok || subj != "سجاد" || pred != "دوست_دارد" || obj != "برنامه_نویسی" {
+		t.Errorf("failed parsing Persian natural triple: %s, %s, %s, %v", subj, pred, obj, ok)
+	}
+
+	// 2. Arrow format
+	subj, pred, obj, ok = ParseTriple("سجاد -> علاقه‌مند_به -> هوش مصنوعی و گراف")
+	if !ok || subj != "سجاد" || pred != "علاقه‌مند_به" || obj != "هوش مصنوعی و گراف" {
+		t.Errorf("failed parsing arrow triple: %s, %s, %s, %v", subj, pred, obj, ok)
+	}
+
+	// 3. Pipe format
+	subj, pred, obj, ok = ParseTriple("Amadeus | role | AI Systems Architect")
+	if !ok || subj != "Amadeus" || pred != "role" || obj != "AI Systems Architect" {
+		t.Errorf("failed parsing pipe triple: %s, %s, %s, %v", subj, pred, obj, ok)
+	}
+}

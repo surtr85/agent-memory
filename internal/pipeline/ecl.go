@@ -25,11 +25,11 @@ type markdownSection struct {
 
 // DreamCycleResult contains metrics and artifacts produced by the Nightly Dream consolidation.
 type DreamCycleResult struct {
-	DreamDate         string `json:"dream_date"`
+	DreamDate          string `json:"dream_date"`
 	ObservationsMerged int    `json:"observations_merged"`
-	FactsCreated      int    `json:"facts_created"`
-	ProseContent      string `json:"prose_content"`
-	SynthesisMarkdown string `json:"synthesis_markdown"`
+	FactsCreated       int    `json:"facts_created"`
+	ProseContent       string `json:"prose_content"`
+	SynthesisMarkdown  string `json:"synthesis_markdown"`
 }
 
 // IngestMarkdown parses markdown by headers (#, ##, ###),

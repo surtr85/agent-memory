@@ -15,6 +15,7 @@ func (s *Server) registerTools() {
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_get_bootstrap",
 			mcp.WithDescription("Returns compact bootstrap prompt from working core memory blocks for prompt injection (< 400 tokens)."),
+			mcp.WithBoolean("include_domain", mcp.Description("Whether to include domain-specific blocks alongside core system blocks (default false)")),
 		),
 		s.handleGetBootstrap,
 	)
@@ -67,7 +68,7 @@ func (s *Server) registerTools() {
 		s.handleListBlocks,
 	)
 
-// 7. memory_add_fact (args: namespace, subject, predicate, object, source, source_uri, source_quote, line_number, salience)
+	// 7. memory_add_fact (args: namespace, subject, predicate, object, source, source_uri, source_quote, line_number, salience)
 	s.MCPServer.AddTool(
 		mcp.NewTool("memory_add_fact",
 			mcp.WithDescription("Records a bi-temporal atomic fact (triple) with automatic contradiction resolution and source citation."),
@@ -243,7 +244,9 @@ func (s *Server) registerTools() {
 
 // 1. handleGetBootstrap
 func (s *Server) handleGetBootstrap(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	prompt, err := s.Blocks.GetBootstrapPrompt()
+	includeDomain := req.GetBool("include_domain", false)
+
+	prompt, err := s.Blocks.GetBootstrapPromptScoped(includeDomain)
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("failed to get bootstrap prompt: %v", err)), nil
 	}
@@ -789,4 +792,3 @@ func (s *Server) handleReflect(ctx context.Context, req mcp.CallToolRequest) (*m
 	}
 	return mcp.NewToolResultText(string(jsonBytes)), nil
 }
-

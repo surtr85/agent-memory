@@ -160,44 +160,50 @@ func (v *BuiltinVectorizer) projectFeature(vec []float64, feature string, weight
 
 // HTTPClient implements Client as an optional fallback or custom provider
 // when external daemon/API is explicitly configured.
-// Fallback order:
-// 1. Primary BGE-M3 embedding server (POST /embedding, body {"content": text})
-// 2. Secondary Ollama endpoint (POST /api/embeddings with {"model": "bge-m3", "prompt": text})
-// 3. BuiltinVectorizer native fallback (never crashes or returns fatal error)
+// Supported endpoints:
+// 1. OpenAI / llama-server / BGE-M3 embedding server (POST /v1/embeddings or /embedding)
+// 2. Secondary Ollama endpoint (POST /api/embeddings)
+// 3. BuiltinVectorizer native fallback (zero external daemon, never crashes)
 type HTTPClient struct {
-	BGEURL     string
-	OllamaURL  string
-	Model      string
-	Dimensions int
-	HTTP       *http.Client
-	builtin    *BuiltinVectorizer
+	EmbeddingURL string
+	BGEURL       string // Backward-compatibility alias
+	OllamaURL    string
+	Model        string
+	Dimensions   int
+	HTTP         *http.Client
+	builtin      *BuiltinVectorizer
 }
 
 // NewHTTPClient creates an HTTPClient with custom URLs or fallbacks.
-func NewHTTPClient(bgeURL, ollamaURL, model string, dimensions int) *HTTPClient {
+func NewHTTPClient(embeddingURL, ollamaURL, model string, dimensions int) *HTTPClient {
 	if model == "" {
-		model = "bge-m3"
+		model = "embeddinggemma"
 	}
 	if dimensions <= 0 {
 		dimensions = DefaultBuiltinDimensions
 	}
 	return &HTTPClient{
-		BGEURL:     bgeURL,
-		OllamaURL:  ollamaURL,
-		Model:      model,
-		Dimensions: dimensions,
+		EmbeddingURL: embeddingURL,
+		BGEURL:       embeddingURL,
+		OllamaURL:    ollamaURL,
+		Model:        model,
+		Dimensions:   dimensions,
 		HTTP: &http.Client{
-			Timeout: 3 * time.Second,
+			Timeout: 4 * time.Second,
 		},
 		builtin: NewBuiltinVectorizerWithDim(dimensions),
 	}
 }
 
-// GetEmbedding attempts BGE-M3 -> Ollama -> BuiltinVectorizer Fallback.
+// GetEmbedding attempts EmbeddingURL -> Ollama -> BuiltinVectorizer Fallback.
 func (c *HTTPClient) GetEmbedding(ctx context.Context, text string) ([]float32, error) {
-	// 1. Try BGE-M3 Server if URL provided
-	if c.BGEURL != "" {
-		emb, err := c.callBGE(ctx, text)
+	// 1. Try Primary Embedding Server if URL provided
+	url := c.EmbeddingURL
+	if url == "" {
+		url = c.BGEURL
+	}
+	if url != "" {
+		emb, err := c.callEmbedding(ctx, url, text)
 		if err == nil && len(emb) > 0 {
 			return emb, nil
 		}
@@ -215,16 +221,22 @@ func (c *HTTPClient) GetEmbedding(ctx context.Context, text string) ([]float32, 
 	return c.builtin.GetEmbedding(ctx, text)
 }
 
-// callBGE calls standard BGE-M3 endpoint: POST /embedding body {"content": text}
-func (c *HTTPClient) callBGE(ctx context.Context, text string) ([]float32, error) {
-	reqBody, err := json.Marshal(map[string]string{
+// callEmbedding calls OpenAI / llama-server / BGE endpoints.
+func (c *HTTPClient) callEmbedding(ctx context.Context, endpoint, text string) ([]float32, error) {
+	reqMap := map[string]interface{}{
+		"input":   text,
 		"content": text,
-	})
+		"prompt":  text,
+	}
+	if c.Model != "" {
+		reqMap["model"] = c.Model
+	}
+	reqBody, err := json.Marshal(reqMap)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BGEURL, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +249,7 @@ func (c *HTTPClient) callBGE(ctx context.Context, text string) ([]float32, error
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bge returned status: %d", resp.StatusCode)
+		return nil, fmt.Errorf("embedding endpoint returned status: %d", resp.StatusCode)
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
@@ -245,19 +257,35 @@ func (c *HTTPClient) callBGE(ctx context.Context, text string) ([]float32, error
 		return nil, err
 	}
 
+	// 1. OpenAI / llama-server format: {"data": [{"embedding": [...]}]}
+	var openAIResp struct {
+		Data []struct {
+			Embedding []float32 `json:"embedding"`
+		} `json:"data"`
+		Embedding []float32 `json:"embedding"`
+	}
+	if err := json.Unmarshal(bodyBytes, &openAIResp); err == nil {
+		if len(openAIResp.Data) > 0 && len(openAIResp.Data[0].Embedding) > 0 {
+			return openAIResp.Data[0].Embedding, nil
+		}
+		if len(openAIResp.Embedding) > 0 {
+			return openAIResp.Embedding, nil
+		}
+	}
+
+	// 2. Direct array: [...]
 	var rawList []float32
-	if err := json.Unmarshal(bodyBytes, &rawList); err == nil {
+	if err := json.Unmarshal(bodyBytes, &rawList); err == nil && len(rawList) > 0 {
 		return rawList, nil
 	}
 
-	var objResp struct {
-		Embedding []float32 `json:"embedding"`
-	}
-	if err := json.Unmarshal(bodyBytes, &objResp); err == nil && len(objResp.Embedding) > 0 {
-		return objResp.Embedding, nil
+	// 3. 2D array: [[...]]
+	var raw2D [][]float32
+	if err := json.Unmarshal(bodyBytes, &raw2D); err == nil && len(raw2D) > 0 && len(raw2D[0]) > 0 {
+		return raw2D[0], nil
 	}
 
-	return nil, fmt.Errorf("unable to parse bge response")
+	return nil, fmt.Errorf("unable to parse embedding response")
 }
 
 // callOllama calls Ollama endpoint: POST /api/embeddings with {"model": model, "prompt": text}
