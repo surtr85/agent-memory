@@ -1,5 +1,5 @@
 {
-  description = "AgentMemory Universal (v3.0 Cognitive Engine) - Pure Go Edition";
+  description = "AgentMemory Universal (v3.5 Cognitive Engine) - Pure Go Edition";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -14,7 +14,7 @@
       {
         packages.default = pkgs.buildGoModule {
           pname = "agent-memory";
-          version = "3.0.0";
+          version = "3.5.0";
           src = ./.;
 
           vendorHash = null;
@@ -31,7 +31,7 @@
           subPackages = [ "cmd/agent-memory" ];
 
           meta = with pkgs.lib; {
-            description = "AgentMemory Universal (v3.0) Cognitive Memory Engine";
+            description = "AgentMemory Universal (v3.5) Cognitive Memory Engine";
             homepage = "https://github.com/surtr85/agent-memory";
             license = licenses.mit;
           };
