@@ -21,7 +21,6 @@ import (
 	"github.com/surtr85/agent-memory/internal/retrieval"
 	"github.com/surtr85/agent-memory/internal/server"
 	"github.com/surtr85/agent-memory/internal/temporal"
-	"github.com/surtr85/agent-memory/internal/web"
 )
 
 const version = "3.5.0"
@@ -30,15 +29,15 @@ func printHelp() {
 	fmt.Println(`AgentMemory Universal (v3.5.0) — High-Performance Pure Go Cognitive Memory
 
 Usage:
-  agent-memory ui [--port 3200]                  Launch embedded web dashboard & knowledge graph
   agent-memory serve                             Start stdio FastMCP server
   agent-memory bootstrap                         Print compact working memory prompt for prompt injection
   agent-memory search <query> [--ns <ns>] [--top <k>] [--historical]
-  agent-memory route <query>                     Classify query namespace with System-1 Decision Engine
-  agent-memory decide <state> [--preset <preset>] Execute System-1 / Jev AI decision engine
+  agent-memory inspect <entity>                  Inspect entity relations, facts, and connected graph
+  agent-memory stats                             Show namespace, entity & chunk breakdown
+  agent-memory health                            Show database health & record counts
   agent-memory fact add <ns> <sub> <pred> <obj> [source] [--uri <uri>] [--quote <quote>] [--line <line>]
   agent-memory fact explain <id>                 Explain fact with citations and supersession history
-  agent-memory fact list [--ns <ns>]
+  agent-memory fact list [--ns <ns>] [--search <str>] [--limit <n>]
   agent-memory block get <label>
   agent-memory block set <label> <content>
   agent-memory block list
@@ -48,8 +47,8 @@ Usage:
   agent-memory forget stage <pattern> [--ns <ns>] Stage memory for safe retraction
   agent-memory forget execute <stage_id>         Execute cascade retraction and save tombstones
   agent-memory reflect [context]                 System-1 cognitive appraisal of memory blocks & goals
-  agent-memory stats                             Show namespace & entity breakdown
-  agent-memory health                            Show database health & record counts
+  agent-memory route <query>                     Classify query namespace with System-1 Decision Engine
+  agent-memory decide <state> [--preset <preset>] Execute System-1 / Jev AI decision engine
   agent-memory version                           Show version
 
 Environment Variables:
@@ -105,25 +104,93 @@ func main() {
 			os.Exit(1)
 		}
 
-	case "ui", "dashboard", "web":
-		port := 3200
-		for i := 2; i < len(os.Args); i++ {
-			if (os.Args[i] == "--port" || os.Args[i] == "-p") && i+1 < len(os.Args) {
-				if p, err := strconv.Atoi(os.Args[i+1]); err == nil && p > 0 {
-					port = p
-				}
-				i++
-			}
-		}
-		database := initDB(cfg)
-		defer database.Close()
-		embClient := initEmbeddingClient(cfg)
-		searcher := retrieval.NewSearcher(database, embClient)
-		webServer := web.NewServer(database, cfg, searcher, port)
-		if err := webServer.Start(); err != nil {
-			fmt.Fprintf(os.Stderr, "Web server exited with error: %v\n", err)
+	case "inspect":
+		if len(os.Args) < 3 {
+			fmt.Fprintf(os.Stderr, "Usage: agent-memory inspect <entity>\n")
 			os.Exit(1)
 		}
+		targetEntity := os.Args[2]
+		database := initDB(cfg)
+		defer database.Close()
+
+		// 1. Entity info
+		var entityType, entityNS, desc sql.NullString
+		err := database.QueryRow(`SELECT entity_type, namespace, description FROM entities WHERE name = ?`, targetEntity).
+			Scan(&entityType, &entityNS, &desc)
+		typeStr := "concept"
+		nsStr := "default"
+		descStr := ""
+		if err == nil {
+			if entityType.Valid {
+				typeStr = entityType.String
+			}
+			if entityNS.Valid {
+				nsStr = entityNS.String
+			}
+			if desc.Valid {
+				descStr = desc.String
+			}
+		}
+
+		fmt.Printf("═══════════════════════════════════════════════════════════════\n")
+		fmt.Printf("  Entity:    %s\n", targetEntity)
+		fmt.Printf("  Type:      %s\n", typeStr)
+		fmt.Printf("  Namespace: %s\n", nsStr)
+		if descStr != "" {
+			fmt.Printf("  Desc:      %s\n", descStr)
+		}
+		fmt.Printf("═══════════════════════════════════════════════════════════════\n\n")
+
+		// 2. Relations (outgoing & incoming)
+		relRows, err := database.Query(`SELECT source_entity, target_entity, relation_type, weight 
+			FROM entity_relations 
+			WHERE source_entity = ? OR target_entity = ? 
+			ORDER BY weight DESC LIMIT 50`, targetEntity, targetEntity)
+		if err == nil {
+			fmt.Println("Knowledge Graph Relations:")
+			relCount := 0
+			for relRows.Next() {
+				var src, tgt, rel string
+				var w float64
+				if err := relRows.Scan(&src, &tgt, &rel, &w); err == nil {
+					relCount++
+					if src == targetEntity {
+						fmt.Printf("  ──[%s (w:%.1f)]──> %s\n", rel, w, tgt)
+					} else {
+						fmt.Printf("  <──[%s (w:%.1f)]── %s\n", rel, w, src)
+					}
+				}
+			}
+			relRows.Close()
+			if relCount == 0 {
+				fmt.Println("  (no explicit graph relations recorded)")
+			}
+		}
+
+		// 3. Bound Atomic Facts
+		reg := temporal.NewRegistry(database)
+		factRows, err := database.Query(`SELECT id, namespace, subject, predicate, object, source, valid_from
+			FROM facts 
+			WHERE valid_until IS NULL AND (subject = ? OR object = ?)
+			ORDER BY recorded_at DESC LIMIT 30`, targetEntity, targetEntity)
+		if err == nil {
+			fmt.Println("\nActive Atomic Facts:")
+			factCount := 0
+			for factRows.Next() {
+				var id, ns, subj, pred, obj, source, validFrom string
+				if err := factRows.Scan(&id, &ns, &subj, &pred, &obj, &source, &validFrom); err == nil {
+					factCount++
+					fmt.Printf("  • [%s] (%s) --[%s]--> (%s)\n    [id: %s | src: %s]\n",
+						ns, subj, pred, obj, id, source)
+				}
+			}
+			factRows.Close()
+			if factCount == 0 {
+				fmt.Println("  (no active facts bound to this entity)")
+			}
+		}
+		_ = reg
+		fmt.Println()
 
 	case "bootstrap":
 		database := initDB(cfg)
@@ -275,9 +342,19 @@ func main() {
 
 		case "list":
 			ns := ""
+			searchFilter := ""
+			limit := 50
 			for i := 3; i < len(os.Args); i++ {
 				if os.Args[i] == "--ns" && i+1 < len(os.Args) {
 					ns = os.Args[i+1]
+					i++
+				} else if (os.Args[i] == "--search" || os.Args[i] == "-s") && i+1 < len(os.Args) {
+					searchFilter = strings.ToLower(os.Args[i+1])
+					i++
+				} else if (os.Args[i] == "--limit" || os.Args[i] == "-n") && i+1 < len(os.Args) {
+					if n, err := strconv.Atoi(os.Args[i+1]); err == nil && n > 0 {
+						limit = n
+					}
 					i++
 				}
 			}
@@ -299,15 +376,34 @@ func main() {
 				os.Exit(1)
 			}
 
+			// Apply search filter if specified
+			if searchFilter != "" {
+				var filtered []temporal.Fact
+				for _, f := range facts {
+					if strings.Contains(strings.ToLower(f.Subject), searchFilter) ||
+						strings.Contains(strings.ToLower(f.Predicate), searchFilter) ||
+						strings.Contains(strings.ToLower(f.Object), searchFilter) ||
+						strings.Contains(strings.ToLower(f.Namespace), searchFilter) {
+						filtered = append(filtered, f)
+					}
+				}
+				facts = filtered
+			}
+
 			if len(facts) == 0 {
-				fmt.Println("No active facts found.")
+				fmt.Println("No active facts matched criteria.")
 				return
 			}
 
-			fmt.Printf("Active Facts (%d):\n", len(facts))
+			totalFound := len(facts)
+			if len(facts) > limit {
+				facts = facts[:limit]
+			}
+
+			fmt.Printf("Active Facts (showing %d of %d):\n", len(facts), totalFound)
 			for _, f := range facts {
-				fmt.Printf("  • [%s] (%s) --[%s]--> (%s) [source: %s]\n",
-					f.Namespace, f.Subject, f.Predicate, f.Object, f.Source)
+				fmt.Printf("  • [%s] (%s) ──[%s]──> (%s)\n    ↳ ID: %s | Source: %s\n",
+					f.Namespace, f.Subject, f.Predicate, f.Object, f.ID, f.Source)
 			}
 
 		default:
@@ -480,6 +576,11 @@ func main() {
 			}
 			eRows.Close()
 		}
+
+		// Entity relations count
+		var relCount int
+		_ = database.QueryRow(`SELECT COUNT(*) FROM entity_relations`).Scan(&relCount)
+		fmt.Printf("\nGraph Relations: %d edges\n", relCount)
 
 	case "health":
 		database := initDB(cfg)
