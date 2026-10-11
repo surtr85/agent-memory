@@ -426,6 +426,7 @@
           </label>
           <button class="btn-icon" onclick="zoomIn()" title="Zoom In">+</button>
           <button class="btn-icon" onclick="zoomOut()" title="Zoom Out">−</button>
+          <button class="btn-icon" onclick="zoomToFit()" title="Fit to Screen" style="width:auto; padding:0 8px; font-size:0.78rem; gap:4px; display:flex;">⛶ Fit</button>
           <button class="btn-icon" onclick="resetZoom()" title="Reset View">⊙</button>
         </div>
 
@@ -533,12 +534,41 @@
 
     function getNodeRadius(d) {
       const degree = d.degree || 0;
-      return Math.max(4.5, Math.min(18, 4.5 + Math.sqrt(degree) * 2.8));
+      return Math.max(8.5, Math.min(26, 8.5 + Math.sqrt(degree) * 3.8));
     }
 
     function getTruncatedLabel(label) {
       if (!label) return '';
-      return label.length > 16 ? label.slice(0, 14) + '…' : label;
+      return label.length > 20 ? label.slice(0, 18) + '…' : label;
+    }
+
+    function zoomToFit() {
+      if (!graphData.nodes || graphData.nodes.length === 0 || !mainSvgGroup || !svgZoom) return;
+      const validNodes = graphData.nodes.filter(n => typeof n.x === 'number' && !isNaN(n.x) && typeof n.y === 'number' && !isNaN(n.y));
+      if (validNodes.length === 0) return;
+
+      const xs = validNodes.map(n => n.x);
+      const ys = validNodes.map(n => n.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+
+      const dx = (maxX - minX) || 200;
+      const dy = (maxY - minY) || 200;
+      const midX = (minX + maxX) / 2;
+      const midY = (minY + maxY) / 2;
+
+      const container = document.getElementById("graph-container");
+      const w = container.clientWidth || 1000;
+      const h = container.clientHeight || 700;
+
+      const padding = 80;
+      const scale = Math.min(2.0, Math.max(0.45, 0.82 / Math.max((dx + padding) / w, (dy + padding) / h)));
+      const translate = [w / 2 - scale * midX, h / 2 - scale * midY];
+
+      d3.select("#graph-svg").transition().duration(500).call(
+        svgZoom.transform,
+        d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+      );
     }
 
     async function loadGraph() {
@@ -578,18 +608,20 @@
       graphData = { nodes, links };
 
       simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(80).strength(0.4))
-        .force("charge", d3.forceManyBody().strength(d => -80 - (d.degree || 0) * 15))
-        .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collision", d3.forceCollide().radius(d => getNodeRadius(d) + 12));
+        .force("link", d3.forceLink(links).id(d => d.id).distance(145).strength(0.45))
+        .force("charge", d3.forceManyBody().strength(d => -160 - (d.degree || 0) * 20).distanceMax(550))
+        .force("center", d3.forceCenter(width / 2, height / 2).strength(0.25))
+        .force("x", d3.forceX(width / 2).strength(0.065))
+        .force("y", d3.forceY(height / 2).strength(0.065))
+        .force("collision", d3.forceCollide().radius(d => getNodeRadius(d) + 16));
 
-      // Edges
+      // Edges with subtle directional styling
       const link = mainSvgGroup.append("g")
         .selectAll("line")
         .data(links)
         .join("line")
-        .attr("stroke", "rgba(148, 163, 184, 0.16)")
-        .attr("stroke-width", d => Math.max(1, (d.weight || 1) * 1.2));
+        .attr("stroke", "rgba(148, 163, 184, 0.22)")
+        .attr("stroke-width", d => Math.max(1.2, (d.weight || 1) * 1.5));
 
       // Node Groups
       const node = mainSvgGroup.append("g")
@@ -603,24 +635,29 @@
           .on("end", (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
         );
 
-      // Circles
+      // Circles with rich outline and glow
       node.append("circle")
         .attr("r", d => getNodeRadius(d))
         .attr("fill", d => getNodeColor(d))
         .attr("stroke", "#07080c")
-        .attr("stroke-width", 1.8)
-        .attr("filter", d => (d.degree || 0) >= 4 ? "url(#neon-glow)" : null);
+        .attr("stroke-width", 2)
+        .attr("filter", d => (d.degree || 0) >= 3 ? "url(#neon-glow)" : null);
 
-      // Clean Labels: only show for degree >= 2 by default
+      // Clean, readable Labels with dark stroke outline (paint-order stroke)
       node.append("text")
         .text(d => getTruncatedLabel(d.label))
-        .attr("x", d => getNodeRadius(d) + 4)
-        .attr("y", 3)
-        .attr("fill", "#cbd5e1")
-        .attr("font-size", "9.5px")
-        .attr("font-weight", d => (d.degree || 0) >= 4 ? "600" : "400")
-        .attr("style", d => (d.degree || 0) < 2 ? "display: none;" : "")
-        .attr("pointer-events", "none");
+        .attr("x", d => getNodeRadius(d) + 6)
+        .attr("y", 4)
+        .attr("fill", "#e2e8f0")
+        .attr("font-size", "11px")
+        .attr("font-weight", d => (d.degree || 0) >= 3 ? "600" : "500")
+        .attr("style", d => (d.degree || 0) < 1 ? "display: none;" : "")
+        .attr("pointer-events", "none")
+        .attr("paint-order", "stroke")
+        .attr("stroke", "#07080c")
+        .attr("stroke-width", "3.5px")
+        .attr("stroke-linecap", "round")
+        .attr("stroke-linejoin", "round");
 
       // Hover Interaction: Highlight neighborhood
       node.on("mouseenter", (e, d) => {
@@ -630,10 +667,10 @@
           if (l.target.id === d.id) neighborSet.add(l.source.id);
         });
 
-        node.style("opacity", n => neighborSet.has(n.id) ? 1 : 0.15);
-        link.style("stroke-opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 0.9 : 0.05)
-            .style("stroke", l => (l.source.id === d.id || l.target.id === d.id) ? "#818cf8" : "rgba(148, 163, 184, 0.16)")
-            .style("stroke-width", l => (l.source.id === d.id || l.target.id === d.id) ? 2 : 1);
+        node.style("opacity", n => neighborSet.has(n.id) ? 1 : 0.12);
+        link.style("stroke-opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 1 : 0.04)
+            .style("stroke", l => (l.source.id === d.id || l.target.id === d.id) ? "#818cf8" : "rgba(148, 163, 184, 0.22)")
+            .style("stroke-width", l => (l.source.id === d.id || l.target.id === d.id) ? 2.5 : 1);
 
         // Show text label on hover
         d3.select(e.currentTarget).select("text").style("display", "block").attr("fill", "#ffffff");
@@ -642,10 +679,10 @@
       node.on("mouseleave", (e, d) => {
         node.style("opacity", 1);
         link.style("stroke-opacity", 0.6)
-            .style("stroke", "rgba(148, 163, 184, 0.16)")
-            .style("stroke-width", d => Math.max(1, (d.weight || 1) * 1.2));
+            .style("stroke", "rgba(148, 163, 184, 0.22)")
+            .style("stroke-width", d => Math.max(1.2, (d.weight || 1) * 1.5));
 
-        if ((d.degree || 0) < 2) {
+        if ((d.degree || 0) < 1) {
           d3.select(e.currentTarget).select("text").style("display", "none");
         }
       });
@@ -655,6 +692,7 @@
         openDrawer(d);
       });
 
+      let tickCount = 0;
       simulation.on("tick", () => {
         link
           .attr("x1", d => d.source.x)
@@ -662,6 +700,11 @@
           .attr("x2", d => d.target.x)
           .attr("y2", d => d.target.y);
         node.attr("transform", d => `translate(${d.x},${d.y})`);
+
+        tickCount++;
+        if (tickCount === 40) {
+          zoomToFit();
+        }
       });
     }
 
