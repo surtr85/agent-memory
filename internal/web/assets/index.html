@@ -3,76 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AgentMemory — 記憶 禅 (Japanese Dark Zen Dashboard)</title>
+  <title>AgentMemory — 記憶 禅 (Zen AMOLED Dark Dashboard)</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Serif+JP:wght@300;400;600&family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Serif+JP:wght@300;400;600;700;900&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-void: #08090c;
-      --bg-surface: #0f1117;
-      --bg-card: #141720;
-      --bg-card-hover: #1a1e2b;
-      --border-subtle: rgba(212, 175, 55, 0.12);
-      --border-active: rgba(212, 175, 55, 0.35);
-      
-      /* Japanese Zen Palette */
-      --kintsugi-gold: #d4af37;
-      --kintsugi-glow: rgba(212, 175, 55, 0.25);
-      --matcha-green: #88a070;
-      --matcha-glow: rgba(136, 160, 112, 0.25);
-      --akane-red: #d3524b;
-      --akane-glow: rgba(211, 82, 75, 0.25);
-      --indigo-blue: #7c8fb5;
-      --indigo-glow: rgba(124, 143, 181, 0.25);
-      --bamboo-gray: #3a3f52;
-      
-      --text-primary: #e6e8ee;
-      --text-secondary: #9a9eb1;
-      --text-muted: #5e6378;
-      --text-kanji: rgba(212, 175, 55, 0.18);
-      
+      /* Pure OLED True Black Zen Palette */
+      --bg-amoled: #000000;
+      --bg-void: #020204;
+      --bg-surface: #07080b;
+      --bg-surface-elevated: #0d0f15;
+      --bg-card: rgba(10, 12, 17, 0.85);
+      --bg-card-hover: rgba(18, 22, 31, 0.95);
+      --bg-glass: rgba(6, 7, 10, 0.82);
+      --bg-panel: rgba(9, 11, 16, 0.96);
+
+      /* Japanese Kintsugi & Natural Pigments */
+      --kintsugi-gold: #ffd700;
+      --kintsugi-gold-subtle: #d4af37;
+      --kintsugi-gold-dark: #8c7320;
+      --kintsugi-glow: rgba(255, 215, 0, 0.35);
+      --kintsugi-glow-soft: rgba(212, 175, 55, 0.15);
+
+      --matcha-green: #70e000;
+      --matcha-subtle: #52b788;
+      --matcha-glow: rgba(112, 224, 0, 0.3);
+
+      --akane-red: #ff4d6d;
+      --akane-subtle: #e63946;
+      --akane-glow: rgba(255, 77, 109, 0.3);
+
+      --sakura-purple: #e056fd;
+      --sakura-subtle: #c77dff;
+      --sakura-glow: rgba(224, 86, 253, 0.3);
+
+      --torii-indigo: #4cc9f0;
+      --torii-indigo-subtle: #3a86ff;
+      --torii-indigo-glow: rgba(76, 201, 240, 0.3);
+
+      --washi-amber: #ffb703;
+      --emerald-leaf: #00f5d4;
+      --sumi-border: rgba(255, 255, 255, 0.08);
+
+      /* Hairline Shoji Borders */
+      --border-subtle: rgba(212, 175, 55, 0.16);
+      --border-active: rgba(255, 215, 0, 0.5);
+      --border-hover: rgba(255, 215, 0, 0.35);
+      --border-card: rgba(255, 255, 255, 0.07);
+
+      /* Japanese Typography */
+      --text-primary: #f8f9fa;
+      --text-secondary: #9da3b4;
+      --text-muted: #555b6e;
+      --text-kanji: rgba(255, 215, 0, 0.06);
+
       --font-serif: 'Noto Serif JP', 'Cinzel', serif;
       --font-mono: 'JetBrains Mono', monospace;
-      --font-sans: 'Vazirmatn', -apple-system, sans-serif;
+      --font-sans: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+      --shoji-shadow: 0 16px 40px rgba(0, 0, 0, 0.95);
+      --gold-shadow: 0 0 24px rgba(255, 215, 0, 0.22);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
-      font-family: var(--font-sans);
-      background-color: var(--bg-void);
+      background-color: var(--bg-amoled);
       color: var(--text-primary);
-      height: 100vh;
+      font-family: var(--font-sans);
       overflow: hidden;
+      height: 100vh;
+      width: 100vw;
       display: flex;
       flex-direction: column;
+      user-select: none;
       background-image: 
         radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.04) 0%, transparent 60%),
-        radial-gradient(circle at 100% 100%, rgba(124, 143, 181, 0.03) 0%, transparent 50%);
+        radial-gradient(circle at 100% 100%, rgba(76, 201, 240, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 0% 100%, rgba(224, 86, 253, 0.02) 0%, transparent 50%);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    /* TOP ZEN BAR */
+    /* Sleek Custom Scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-amoled); }
+    ::-webkit-scrollbar-thumb { background: rgba(212, 175, 55, 0.25); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--kintsugi-gold-subtle); }
+
+    /* ========================================================
+       TOP ZEN HEADER BAR
+       ======================================================== */
     header.zen-header {
-      height: 64px;
+      height: 60px;
       background: var(--bg-surface);
       border-bottom: 1px solid var(--border-subtle);
-      padding: 0 28px;
+      padding: 0 22px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: relative;
       z-index: 50;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
     }
 
     .brand-section {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
-    /* Animated Ensō Circle Logo */
+    /* Animated Ensō Zen Circle */
     .enso-logo {
       width: 36px;
       height: 36px;
@@ -80,99 +128,105 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
     }
 
     .enso-svg {
       width: 100%;
       height: 100%;
       transform: rotate(-45deg);
-      filter: drop-shadow(0 0 6px var(--kintsugi-glow));
+      filter: drop-shadow(0 0 8px var(--kintsugi-glow));
     }
 
     .enso-path {
       fill: none;
       stroke: var(--kintsugi-gold);
-      stroke-width: 3.5;
+      stroke-width: 3.2;
       stroke-linecap: round;
       stroke-dasharray: 100;
-      stroke-dashoffset: 10;
+      stroke-dashoffset: 12;
       animation: ensoPulse 6s ease-in-out infinite alternate;
     }
 
     @keyframes ensoPulse {
-      0% { stroke-dashoffset: 14; filter: drop-shadow(0 0 4px var(--kintsugi-glow)); }
-      100% { stroke-dashoffset: 2; filter: drop-shadow(0 0 12px var(--kintsugi-gold)); }
+      0% { stroke-dashoffset: 14; filter: drop-shadow(0 0 6px var(--kintsugi-glow)); }
+      50% { stroke-dashoffset: 26; filter: drop-shadow(0 0 14px var(--kintsugi-glow)); }
+      100% { stroke-dashoffset: 10; filter: drop-shadow(0 0 8px var(--kintsugi-glow)); }
     }
 
-    .brand-title {
+    .brand-titles {
       display: flex;
       flex-direction: column;
     }
 
     .brand-name {
       font-family: var(--font-serif);
+      font-size: 1.05rem;
       font-weight: 700;
-      font-size: 1.25rem;
       letter-spacing: 0.08em;
-      color: var(--text-primary);
+      color: #ffffff;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
     .brand-kanji {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: var(--kintsugi-gold);
-      font-weight: 400;
-      opacity: 0.85;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-shadow: 0 0 12px var(--kintsugi-glow);
     }
 
     .brand-sub {
       font-family: var(--font-mono);
-      font-size: 0.68rem;
+      font-size: 0.62rem;
+      letter-spacing: 0.22em;
       color: var(--text-muted);
-      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
-    /* TELEMETRY BADGES */
-    .header-telemetry {
+    /* Telemetry Bar */
+    .telemetry-bar {
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border-subtle);
     }
 
     .telemetry-item {
       display: flex;
-      flex-direction: column;
-      align-items: flex-end;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
     }
 
     .telemetry-label {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      font-size: 0.64rem;
+      letter-spacing: 0.08em;
     }
 
     .telemetry-val {
-      font-family: var(--font-mono);
-      font-size: 0.9rem;
-      font-weight: 600;
       color: var(--kintsugi-gold);
+      font-weight: 600;
     }
 
     .status-indicator {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      background: rgba(136, 160, 112, 0.08);
-      border: 1px solid var(--border-subtle);
-      border-radius: 20px;
+      gap: 6px;
       font-family: var(--font-mono);
-      font-size: 0.75rem;
+      font-size: 0.68rem;
       color: var(--matcha-green);
+      font-weight: 600;
+      padding-left: 6px;
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .status-dot {
@@ -180,13 +234,15 @@
       height: 7px;
       border-radius: 50%;
       background: var(--matcha-green);
-      box-shadow: 0 0 8px var(--matcha-green);
-      animation: blink 2s infinite;
+      box-shadow: 0 0 10px var(--matcha-green);
+      animation: blink 2.4s infinite ease-in-out;
     }
 
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @keyframes blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
 
-    /* ACTION BUTTONS */
     .header-actions {
       display: flex;
       align-items: center;
@@ -194,276 +250,602 @@
     }
 
     .zen-btn {
-      background: var(--bg-card);
+      background: rgba(12, 14, 20, 0.8);
       border: 1px solid var(--border-subtle);
       color: var(--text-primary);
+      padding: 6px 14px;
+      border-radius: 6px;
       font-family: var(--font-mono);
-      font-size: 0.78rem;
-      padding: 7px 14px;
-      border-radius: 4px;
+      font-size: 0.74rem;
+      letter-spacing: 0.04em;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
     }
 
     .zen-btn:hover {
       border-color: var(--kintsugi-gold);
+      background: rgba(22, 26, 38, 0.95);
       color: var(--kintsugi-gold);
-      box-shadow: 0 0 10px var(--border-subtle);
-      background: var(--bg-card-hover);
+      box-shadow: 0 0 14px var(--kintsugi-glow-soft);
+      transform: translateY(-1px);
+    }
+
+    .zen-btn:active {
+      transform: translateY(0);
     }
 
     .zen-btn.primary {
       background: rgba(212, 175, 55, 0.12);
-      border-color: var(--kintsugi-gold);
+      border-color: var(--kintsugi-gold-subtle);
       color: var(--kintsugi-gold);
     }
 
     .zen-btn.primary:hover {
-      background: rgba(212, 175, 55, 0.25);
-      box-shadow: 0 0 14px var(--kintsugi-glow);
+      background: rgba(255, 215, 0, 0.22);
+      border-color: var(--kintsugi-gold);
+      box-shadow: 0 0 18px var(--kintsugi-glow);
     }
 
-    /* MAIN CONTAINER & TABS */
+    /* ========================================================
+       MAIN SHELL LAYOUT
+       ======================================================== */
     .main-wrapper {
       display: flex;
       flex: 1;
+      height: calc(100vh - 60px);
       overflow: hidden;
       position: relative;
     }
 
     /* SIDEBAR NAVIGATION */
     nav.zen-nav {
-      width: 220px;
+      width: 210px;
       background: var(--bg-surface);
       border-right: 1px solid var(--border-subtle);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 16px 0;
+      padding: 16px 10px;
+      position: relative;
       z-index: 20;
     }
 
     .nav-group {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding: 0 12px;
+      gap: 5px;
     }
 
     .nav-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 11px 16px;
+      padding: 10px 12px;
       border-radius: 6px;
-      color: var(--text-secondary);
-      text-decoration: none;
       cursor: pointer;
-      font-size: 0.88rem;
-      transition: all 0.2s ease;
       border: 1px solid transparent;
+      transition: all 0.2s ease;
       position: relative;
     }
 
-    .nav-item-title {
+    .nav-item-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 11px;
     }
 
-    .nav-item-kanji {
+    .nav-kanji {
       font-family: var(--font-serif);
-      font-size: 0.95rem;
+      font-size: 1.15rem;
+      font-weight: 700;
       color: var(--text-muted);
       width: 24px;
+      text-align: center;
+      transition: all 0.2s ease;
     }
 
-    .nav-item:hover {
-      color: var(--text-primary);
-      background: var(--bg-card);
-    }
-
-    .nav-item.active {
-      color: var(--kintsugi-gold);
-      background: rgba(212, 175, 55, 0.08);
-      border-color: var(--border-subtle);
-    }
-
-    .nav-item.active .nav-item-kanji {
-      color: var(--kintsugi-gold);
-    }
-
-    .nav-item.active::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 20%;
-      height: 60%;
-      width: 3px;
-      background: var(--kintsugi-gold);
-      box-shadow: 0 0 8px var(--kintsugi-gold);
-      border-radius: 0 2px 2px 0;
+    .nav-title {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+      transition: all 0.2s ease;
     }
 
     .nav-shortcut {
       font-family: var(--font-mono);
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       color: var(--text-muted);
-      background: rgba(255,255,255,0.04);
-      padding: 2px 6px;
-      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 2px 5px;
+      border-radius: 4px;
     }
 
-    .nav-footer-info {
-      padding: 16px 20px;
+    .nav-item:hover {
+      background: rgba(212, 175, 55, 0.05);
+      border-color: rgba(212, 175, 55, 0.2);
+    }
+
+    .nav-item:hover .nav-kanji,
+    .nav-item:hover .nav-title {
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(212, 175, 55, 0.12) 0%, rgba(212, 175, 55, 0.02) 100%);
+      border-color: var(--border-active);
+      box-shadow: inset 2px 0 0 var(--kintsugi-gold), 0 0 16px rgba(212, 175, 55, 0.08);
+    }
+
+    .nav-item.active .nav-kanji {
+      color: var(--kintsugi-gold);
+      text-shadow: 0 0 10px var(--kintsugi-glow);
+    }
+
+    .nav-item.active .nav-title {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .nav-footer {
+      padding: 12px 10px;
       border-top: 1px solid var(--border-subtle);
       font-family: var(--font-mono);
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       color: var(--text-muted);
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
     }
 
-    /* VIEWPORT PANELS */
-    .view-container {
+    .nav-footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* VIEW PANELS CONTAINER */
+    main.zen-workspace {
       flex: 1;
+      height: 100%;
       position: relative;
+      background: var(--bg-amoled);
       overflow: hidden;
-      background: var(--bg-void);
     }
 
     .view-panel {
       position: absolute;
-      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
       opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-      display: flex;
-      flex-direction: column;
-      padding: 24px 32px;
-      overflow-y: auto;
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .view-panel.active {
+      display: flex;
+      flex-direction: column;
       opacity: 1;
-      pointer-events: auto;
     }
 
-    /* PANEL HEADERS */
-    .panel-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      margin-bottom: 24px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .panel-title-group {
-      display: flex;
-      align-items: baseline;
-      gap: 14px;
-    }
-
-    .panel-kanji-bg {
-      font-family: var(--font-serif);
-      font-size: 2rem;
-      color: var(--text-kanji);
-      font-weight: 700;
-      line-height: 1;
-    }
-
-    .panel-title {
-      font-family: var(--font-serif);
-      font-size: 1.4rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      color: var(--text-primary);
-    }
-
-    .panel-sub {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    /* 1. GRAPH VIEW (枯山水 KARESANSUI) */
+    /* ========================================================
+       VIEW 1: KARESANSUI GRAPH (枯山水) — 60FPS CANVAS ENGINE
+       ======================================================== */
     #view-graph {
-      padding: 0;
-    }
-
-    .graph-controls-overlay {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      z-index: 10;
-      display: flex;
-      gap: 12px;
-      background: rgba(15, 17, 23, 0.85);
-      backdrop-filter: blur(8px);
-      padding: 8px 14px;
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-    }
-
-    .graph-select {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      padding: 4px 10px;
-      border-radius: 4px;
-      outline: none;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000000;
     }
 
     #graph-canvas {
       width: 100%;
       height: 100%;
+      display: block;
       cursor: grab;
+      image-rendering: auto;
     }
 
-    #graph-canvas:active { cursor: grabbing; }
+    #graph-canvas:active {
+      cursor: grabbing;
+    }
 
-    /* 2. BLOCKS VIEW (記憶 KIOKU) */
-    .blocks-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    /* FLOATING GRAPH CONTROLS: TOP DECK */
+    .graph-deck-left {
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 10;
+      background: var(--bg-glass);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+    }
+
+    .search-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 5px 10px;
+      transition: border-color 0.2s ease;
+    }
+
+    .search-input-wrap:focus-within {
+      border-color: var(--kintsugi-gold);
+      box-shadow: 0 0 10px var(--kintsugi-glow-soft);
+    }
+
+    .search-input-wrap input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      width: 170px;
+    }
+
+    .search-input-wrap input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .zen-select {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .zen-select:focus {
+      border-color: var(--kintsugi-gold);
+    }
+
+    .density-pill-group {
+      display: flex;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 6px;
+      padding: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .density-pill {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .density-pill:hover {
+      color: var(--text-primary);
+    }
+
+    .density-pill.active {
+      background: rgba(212, 175, 55, 0.18);
+      color: var(--kintsugi-gold);
+      font-weight: 600;
+    }
+
+    /* TOP RIGHT CONTROLS DECK */
+    .graph-deck-right {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 10;
+      background: var(--bg-glass);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+    }
+
+    /* BOTTOM TELEMETRY PILL */
+    .graph-bottom-deck {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: var(--bg-glass);
+      padding: 6px 18px;
+      border-radius: 20px;
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
+      pointer-events: none;
+    }
+
+    /* BOTTOM RIGHT LEGEND */
+    .graph-legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10;
+      background: var(--bg-glass);
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .legend-title {
+      font-family: var(--font-serif);
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      color: var(--kintsugi-gold);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    /* FLOATING ZEN HOVER TOOLTIP */
+    #graph-tooltip {
+      position: absolute;
+      z-index: 40;
+      background: rgba(5, 6, 9, 0.94);
+      border: 1px solid var(--border-active);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: var(--font-sans);
+      pointer-events: none;
+      display: none;
+      box-shadow: var(--shoji-shadow), 0 0 16px var(--kintsugi-glow-soft);
+      backdrop-filter: blur(16px);
+      max-width: 320px;
+      transform: translate(-50%, -120%);
+      transition: opacity 0.15s ease;
+    }
+
+    .tooltip-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 5px;
+    }
+
+    .tooltip-title {
+      font-family: var(--font-serif);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .tooltip-tag {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(212, 175, 55, 0.15);
+      color: var(--kintsugi-gold);
+    }
+
+    .tooltip-body {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* ========================================================
+       SHOJI SCREEN INSPECTION DRAWER (障子スライド)
+       ======================================================== */
+    .shoji-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 420px;
+      height: 100%;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-subtle);
+      z-index: 60;
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(24px);
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shoji-drawer.open {
+      transform: translateX(0);
+    }
+
+    .shoji-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.35);
+    }
+
+    .shoji-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .shoji-kanji-icon {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      color: var(--kintsugi-gold);
+      font-weight: 700;
+      text-shadow: 0 0 10px var(--kintsugi-glow);
+    }
+
+    .shoji-title {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.04em;
+    }
+
+    .shoji-close-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    .shoji-close-btn:hover {
+      border-color: var(--akane-red);
+      color: var(--akane-red);
+      background: rgba(255, 77, 109, 0.1);
+    }
+
+    .shoji-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .shoji-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .shoji-section-title {
+      font-family: var(--font-serif);
+      font-size: 0.74rem;
+      letter-spacing: 0.1em;
+      color: var(--kintsugi-gold);
+      text-transform: uppercase;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 6px;
+    }
+
+    /* ========================================================
+       VIEWS 2-5: OTHER PANELS (BLOCKS, FACTS, MEISO, SEARCH)
+       ======================================================== */
+    .view-content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
       gap: 20px;
+    }
+
+    .view-header-title {
+      font-family: var(--font-serif);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      letter-spacing: 0.05em;
+    }
+
+    .view-header-kanji {
+      color: var(--kintsugi-gold);
+      font-size: 1.5rem;
+      text-shadow: 0 0 12px var(--kintsugi-glow);
+    }
+
+    .view-header-sub {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* Tatami Grid for Core Blocks */
+    .tatami-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 18px;
     }
 
     .tatami-card {
       background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
+      border: 1px solid var(--border-card);
       border-radius: 8px;
-      padding: 20px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      transition: all 0.25s ease;
+      transition: all 0.2s ease;
       position: relative;
-      overflow: hidden;
-    }
-
-    .tatami-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--kintsugi-gold), transparent);
-      opacity: 0.4;
     }
 
     .tatami-card:hover {
       border-color: var(--border-active);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.7), 0 0 16px var(--kintsugi-glow-soft);
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px var(--kintsugi-glow);
     }
 
     .tatami-header {
@@ -473,9 +855,9 @@
     }
 
     .tatami-label {
-      font-family: var(--font-mono);
-      font-size: 0.95rem;
-      font-weight: 600;
+      font-family: var(--font-serif);
+      font-size: 0.92rem;
+      font-weight: 700;
       color: var(--kintsugi-gold);
       display: flex;
       align-items: center;
@@ -484,305 +866,192 @@
 
     .tatami-tag {
       font-family: var(--font-mono);
-      font-size: 0.65rem;
-      padding: 2px 8px;
-      border-radius: 12px;
-      background: rgba(124, 143, 181, 0.12);
-      color: var(--indigo-blue);
-      border: 1px solid rgba(124, 143, 181, 0.25);
+      font-size: 0.62rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 3px 7px;
+      border-radius: 4px;
+      color: var(--text-muted);
     }
 
     .tatami-content {
       font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-      background: rgba(0, 0, 0, 0.25);
+      font-size: 0.76rem;
+      color: var(--text-primary);
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
       padding: 12px;
-      border-radius: 4px;
-      border: 1px solid rgba(255,255,255,0.03);
-      max-height: 220px;
+      max-height: 240px;
       overflow-y: auto;
       white-space: pre-wrap;
+      line-height: 1.5;
     }
 
-    /* 3. FACTS VIEW (庭 NIWA) */
-    .facts-toolbar {
+    .tatami-footer {
       display: flex;
-      gap: 14px;
-      margin-bottom: 20px;
-    }
-
-    .search-input-box {
-      flex: 1;
-      position: relative;
-    }
-
-    .zen-input {
-      width: 100%;
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-primary);
+      align-items: center;
+      justify-content: space-between;
       font-family: var(--font-mono);
-      font-size: 0.85rem;
-      padding: 10px 16px;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* Facts Table / Stream */
+    .facts-filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: var(--bg-surface);
+      padding: 12px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .facts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .fact-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
       border-radius: 6px;
-      outline: none;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
       transition: all 0.2s ease;
     }
 
-    .zen-input:focus {
-      border-color: var(--kintsugi-gold);
-      box-shadow: 0 0 12px var(--kintsugi-glow);
-    }
-
-    .facts-table-wrapper {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .facts-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 0.83rem;
-    }
-
-    .facts-table th {
-      background: rgba(15, 17, 23, 0.9);
-      font-family: var(--font-mono);
-      color: var(--text-muted);
-      font-weight: 500;
-      padding: 12px 18px;
-      border-bottom: 1px solid var(--border-subtle);
-      text-transform: uppercase;
-      font-size: 0.68rem;
-      letter-spacing: 0.05em;
-    }
-
-    .facts-table td {
-      padding: 14px 18px;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-      color: var(--text-secondary);
-      font-family: var(--font-sans);
-    }
-
-    .facts-table tr:hover td {
-      background: rgba(212, 175, 55, 0.03);
-      color: var(--text-primary);
+    .fact-card:hover {
+      border-color: rgba(212, 175, 55, 0.3);
+      background: var(--bg-card-hover);
     }
 
     .fact-triple {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       font-family: var(--font-mono);
       font-size: 0.8rem;
-    }
-
-    .triple-subj { color: var(--text-primary); font-weight: 600; }
-    .triple-pred { color: var(--kintsugi-gold); opacity: 0.85; }
-    .triple-obj  { color: var(--matcha-green); }
-
-    .salience-badge {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      padding: 2px 8px;
-      border-radius: 10px;
-      background: rgba(212, 175, 55, 0.1);
-      color: var(--kintsugi-gold);
-    }
-
-    /* 4. DECISION LAB (瞑想 MEISŌ) */
-    .lab-grid {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 24px;
       flex: 1;
     }
 
-    .lab-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 24px;
+    .fact-subj { color: var(--kintsugi-gold); font-weight: 600; }
+    .fact-pred { color: var(--torii-indigo); }
+    .fact-obj { color: var(--text-primary); }
+
+    .fact-meta {
       display: flex;
-      flex-direction: column;
-      gap: 16px;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
     }
 
-    .preset-selector {
+    /* Meisō Decision Lab */
+    .meiso-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+    }
+
+    .preset-pill-group {
       display: flex;
-      gap: 8px;
       flex-wrap: wrap;
+      gap: 7px;
     }
 
     .preset-btn {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border-subtle);
+      background: rgba(12, 14, 20, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 6px;
       font-family: var(--font-mono);
-      font-size: 0.75rem;
-      padding: 6px 14px;
-      border-radius: 4px;
+      font-size: 0.72rem;
       cursor: pointer;
       transition: all 0.2s ease;
     }
 
-    .preset-btn.active, .preset-btn:hover {
-      background: rgba(212, 175, 55, 0.15);
+    .preset-btn:hover {
+      border-color: var(--kintsugi-gold-subtle);
+      color: var(--kintsugi-gold);
+    }
+
+    .preset-btn.active {
+      background: rgba(212, 175, 55, 0.16);
       border-color: var(--kintsugi-gold);
       color: var(--kintsugi-gold);
+      font-weight: 600;
     }
 
-    .decision-result-card {
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      flex: 1;
-    }
-
-    .decision-gauge {
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      padding: 16px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-    }
-
-    .metric-box {
-      text-align: center;
-    }
-
-    .metric-val {
-      font-family: var(--font-mono);
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--kintsugi-gold);
-    }
-
-    .metric-sub {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-
-    /* SHOJI INSPECTOR DRAWER (障子 PANEL) */
-    .shoji-drawer {
-      position: fixed;
-      top: 0;
-      right: -480px;
-      width: 480px;
-      height: 100vh;
-      background: var(--bg-surface);
-      border-left: 1px solid var(--border-subtle);
-      z-index: 100;
-      box-shadow: -10px 0 40px rgba(0,0,0,0.8);
-      transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .shoji-drawer.open { right: 0; }
-
-    .shoji-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--border-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .shoji-title {
-      font-family: var(--font-serif);
-      font-size: 1.1rem;
-      color: var(--kintsugi-gold);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .shoji-body {
-      padding: 24px;
-      flex: 1;
-      overflow-y: auto;
+    .meiso-textarea {
+      width: 100%;
+      height: 180px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 14px;
+      color: var(--text-primary);
       font-family: var(--font-mono);
       font-size: 0.8rem;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .meiso-textarea:focus {
+      border-color: var(--kintsugi-gold);
+      box-shadow: 0 0 14px var(--kintsugi-glow-soft);
+    }
+
+    /* 4-Way Search Results */
+    .search-result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 8px;
+      padding: 16px 18px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 8px;
+      transition: all 0.2s ease;
     }
 
-    .shoji-close {
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 1.2rem;
-      transition: color 0.2s ease;
+    .search-result-card:hover {
+      border-color: var(--border-active);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
     }
 
-    .shoji-close:hover { color: var(--akane-red); }
-
-    .shoji-section {
-      background: var(--bg-card);
-      border: 1px solid rgba(255,255,255,0.04);
-      padding: 14px;
-      border-radius: 6px;
-    }
-
-    .shoji-section-title {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      letter-spacing: 0.05em;
-    }
-
-    /* SCROLLBAR & UTILS */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg-void); }
-    ::-webkit-scrollbar-thumb { background: var(--bamboo-gray); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--kintsugi-gold); }
-
-    .badge-akane {
-      background: rgba(211, 82, 75, 0.15);
-      color: var(--akane-red);
-      border: 1px solid rgba(211, 82, 75, 0.3);
-      padding: 2px 8px;
-      border-radius: 4px;
+    .score-badge {
       font-family: var(--font-mono);
       font-size: 0.7rem;
-    }
-
-    .badge-gold {
-      background: rgba(212, 175, 55, 0.15);
-      color: var(--kintsugi-gold);
-      border: 1px solid rgba(212, 175, 55, 0.3);
-      padding: 2px 8px;
+      font-weight: 600;
+      color: var(--matcha-green);
+      background: rgba(112, 224, 0, 0.12);
+      padding: 2px 7px;
       border-radius: 4px;
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
+      border: 1px solid rgba(112, 224, 0, 0.25);
     }
   </style>
 </head>
 <body>
 
-  <!-- TOP ZEN BAR -->
+  <!-- ========================================================
+       TOP ZEN HEADER BAR
+       ======================================================== -->
   <header class="zen-header">
     <div class="brand-section">
-      <div class="enso-logo">
-        <svg class="enso-svg" viewBox="0 0 50 50">
-          <path class="enso-path" d="M 25,5 A 20,20 0 1,1 24.9,5" />
+      <div class="enso-logo" title="AgentMemory Ensō (円相)">
+        <svg class="enso-svg" viewBox="0 0 40 40">
+          <circle class="enso-path" cx="20" cy="20" r="14" />
         </svg>
       </div>
-      <div class="brand-title">
+      <div class="brand-titles">
         <div class="brand-name">
           AgentMemory <span class="brand-kanji">記憶 禅</span>
         </div>
@@ -790,7 +1059,8 @@
       </div>
     </div>
 
-    <div class="header-telemetry">
+    <!-- TELEMETRY BADGES -->
+    <div class="telemetry-bar">
       <div class="telemetry-item">
         <span class="telemetry-label">Active Facts</span>
         <span class="telemetry-val" id="stat-facts">--</span>
@@ -809,6 +1079,7 @@
       </div>
     </div>
 
+    <!-- HEADER ACTIONS -->
     <div class="header-actions">
       <button class="zen-btn" onclick="optimizeDB()">
         <span>金</span> Optimize DB
@@ -819,372 +1090,1137 @@
     </div>
   </header>
 
-  <!-- MAIN WRAPPER -->
+  <!-- ========================================================
+       MAIN WRAPPER & SIDEBAR
+       ======================================================== -->
   <div class="main-wrapper">
 
     <!-- SIDEBAR NAV -->
     <nav class="zen-nav">
       <div class="nav-group">
         <div class="nav-item active" onclick="switchTab('graph')" id="nav-graph">
-          <div class="nav-item-title">
-            <span class="nav-item-kanji">枯</span>
-            <span>Karesansui Graph</span>
+          <div class="nav-item-left">
+            <span class="nav-kanji">枯</span>
+            <span class="nav-title">Karesansui Graph</span>
           </div>
           <span class="nav-shortcut">⌘1</span>
         </div>
         <div class="nav-item" onclick="switchTab('blocks')" id="nav-blocks">
-          <div class="nav-item-title">
-            <span class="nav-item-kanji">記</span>
-            <span>Core Blocks</span>
+          <div class="nav-item-left">
+            <span class="nav-kanji">記</span>
+            <span class="nav-title">Core Blocks</span>
           </div>
           <span class="nav-shortcut">⌘2</span>
         </div>
         <div class="nav-item" onclick="switchTab('facts')" id="nav-facts">
-          <div class="nav-item-title">
-            <span class="nav-item-kanji">庭</span>
-            <span>Bi-Temporal Facts</span>
+          <div class="nav-item-left">
+            <span class="nav-kanji">庭</span>
+            <span class="nav-title">Bi-Temporal Facts</span>
           </div>
           <span class="nav-shortcut">⌘3</span>
         </div>
         <div class="nav-item" onclick="switchTab('meiso')" id="nav-meiso">
-          <div class="nav-item-title">
-            <span class="nav-item-kanji">瞑</span>
-            <span>Decision Lab</span>
+          <div class="nav-item-left">
+            <span class="nav-kanji">瞑</span>
+            <span class="nav-title">Decision Lab</span>
           </div>
           <span class="nav-shortcut">⌘4</span>
         </div>
         <div class="nav-item" onclick="switchTab('search')" id="nav-search">
-          <div class="nav-item-title">
-            <span class="nav-item-kanji">探</span>
-            <span>4-Way Search</span>
+          <div class="nav-item-left">
+            <span class="nav-kanji">探</span>
+            <span class="nav-title">4-Way Search</span>
           </div>
           <span class="nav-shortcut">⌘5</span>
         </div>
       </div>
 
-      <div class="nav-footer-info">
-        <div>Namespace: <span style="color: var(--kintsugi-gold);">default</span></div>
-        <div>Latency: <span style="color: var(--matcha-green);">&lt;4ms</span></div>
+      <div class="nav-footer">
+        <div class="nav-footer-row">
+          <span>Namespace:</span>
+          <span style="color: var(--kintsugi-gold);" id="active-ns-badge">all</span>
+        </div>
+        <div class="nav-footer-row">
+          <span>Engine Latency:</span>
+          <span style="color: var(--matcha-green);" id="active-latency-badge">&lt;1.2ms</span>
+        </div>
       </div>
     </nav>
 
-    <!-- VIEWPORT PANELS -->
-    <div class="view-container">
+    <!-- WORKSPACE PANELS -->
+    <main class="zen-workspace">
 
-      <!-- 1. GRAPH VIEW (枯山水) -->
+      <!-- ========================================================
+           VIEW 1: KARESANSUI GRAPH (枯山水)
+           ======================================================== -->
       <div class="view-panel active" id="view-graph">
-        <div class="graph-controls-overlay">
-          <select class="graph-select" id="graph-ns-filter" onchange="loadGraphData()">
+
+        <!-- TOP LEFT HUD DECK -->
+        <div class="graph-deck-left">
+          <div class="search-input-wrap">
+            <span style="color: var(--kintsugi-gold); font-size: 0.8rem;">🔍</span>
+            <input type="text" id="graph-search-input" placeholder="Find node in galaxy..." oninput="onGraphSearch(this.value)">
+          </div>
+          <select class="zen-select" id="graph-ns-filter" onchange="onNamespaceFilterChange()">
             <option value="">All Namespaces</option>
-            <option value="system">system</option>
-            <option value="general">general</option>
           </select>
-          <button class="zen-btn" onclick="loadGraphData()">Reset View</button>
+          <div class="density-pill-group" title="Graph Layout Orbit Density">
+            <button class="density-pill" onclick="setForceDensity('dense', this)">Dense</button>
+            <button class="density-pill active" onclick="setForceDensity('zen', this)">Zen</button>
+            <button class="density-pill" onclick="setForceDensity('orbit', this)">Orbit</button>
+          </div>
         </div>
-        <svg id="graph-canvas"></svg>
+
+        <!-- TOP RIGHT CONTROLS DECK -->
+        <div class="graph-deck-right">
+          <button class="zen-btn" onclick="toggleLabelsMode()" id="btn-labels-mode" title="Toggle node labels">
+            <span>🏷️</span> Labels
+          </button>
+          <button class="zen-btn" onclick="togglePhysicsSimulation()" id="btn-physics-toggle" title="Pause / Resume physics simulation">
+            <span>⏸️</span> Pause
+          </button>
+          <button class="zen-btn" onclick="zoomIn()" title="Zoom In">+</button>
+          <button class="zen-btn" onclick="zoomOut()" title="Zoom Out">-</button>
+          <button class="zen-btn primary" onclick="resetGraphView()" title="Fit View to Screen">
+            <span>🎯</span> Fit View
+          </button>
+        </div>
+
+        <!-- BOTTOM TELEMETRY PILL -->
+        <div class="graph-bottom-deck">
+          <span>Nodes: <strong style="color: var(--kintsugi-gold);" id="graph-count-nodes">0</strong></span>
+          <span style="opacity: 0.3;">|</span>
+          <span>Links: <strong style="color: var(--torii-indigo);" id="graph-count-links">0</strong></span>
+          <span style="opacity: 0.3;">|</span>
+          <span style="color: var(--text-muted);">Scroll: Zoom • Drag: Move • Click: Shoji Inspect</span>
+        </div>
+
+        <!-- BOTTOM RIGHT ENTITY CONSTELLATION LEGEND -->
+        <div class="graph-legend">
+          <div class="legend-title">Entity Constellation</div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--kintsugi-gold);"></div>
+            <span>User &amp; Identities (人)</span>
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--sakura-purple);"></div>
+            <span>AI Agents &amp; Models (脳)</span>
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--matcha-green);"></div>
+            <span>System &amp; OS Core (核)</span>
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--akane-red);"></div>
+            <span>Hardware &amp; Compute (機)</span>
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--torii-indigo);"></div>
+            <span>Infrastructure &amp; Nets (境)</span>
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--emerald-leaf);"></div>
+            <span>Forex &amp; Quant Models (商)</span>
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background: var(--washi-amber);"></div>
+            <span>Knowledge &amp; Obsidian (記)</span>
+          </div>
+        </div>
+
+        <!-- CANVAS ELEMENT (60FPS HARDWARE ACCELERATED) -->
+        <canvas id="graph-canvas"></canvas>
+
+        <!-- FLOATING TOOLTIP -->
+        <div id="graph-tooltip">
+          <div class="tooltip-header">
+            <div class="tooltip-title" id="tooltip-title">Node Title</div>
+            <div class="tooltip-tag" id="tooltip-type">ENTITY</div>
+          </div>
+          <div class="tooltip-body" id="tooltip-desc">Hover details...</div>
+        </div>
+
+        <!-- SHOJI INSPECTION DRAWER -->
+        <div class="shoji-drawer" id="shoji-drawer">
+          <div class="shoji-header">
+            <div class="shoji-title-group">
+              <span class="shoji-kanji-icon" id="shoji-kanji">障</span>
+              <div class="shoji-title" id="shoji-entity-name">Entity Inspector</div>
+            </div>
+            <button class="shoji-close-btn" onclick="closeShoji()">✕</button>
+          </div>
+          <div class="shoji-content" id="shoji-content-body">
+            <!-- Injected dynamically on click -->
+          </div>
+        </div>
+
       </div>
 
-      <!-- 2. CORE BLOCKS VIEW (記憶) -->
+      <!-- ========================================================
+           VIEW 2: CORE BLOCKS (記)
+           ======================================================== -->
       <div class="view-panel" id="view-blocks">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <span class="panel-kanji-bg">記憶</span>
-            <div>
-              <div class="panel-title">Core Working Memory Blocks</div>
-              <div class="panel-sub">Active Letta-style context state</div>
+        <div class="view-content-scroll">
+          <div class="view-header">
+            <div class="view-header-title">
+              <span class="view-header-kanji">記</span> Core Memory Blocks (畳)
             </div>
+            <div class="view-header-sub">Persistent cognitive scratchpad &amp; identity context blocks</div>
           </div>
-          <button class="zen-btn" onclick="loadBlocks()">Refresh</button>
-        </div>
-        <div class="blocks-grid" id="blocks-grid">
-          <!-- Dynamic tatami cards -->
+          <div class="tatami-grid" id="blocks-grid">
+            <!-- Dynamically populated -->
+          </div>
         </div>
       </div>
 
-      <!-- 3. FACTS VIEW (庭) -->
+      <!-- ========================================================
+           VIEW 3: BI-TEMPORAL FACTS (庭)
+           ======================================================== -->
       <div class="view-panel" id="view-facts">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <span class="panel-kanji-bg">庭</span>
-            <div>
-              <div class="panel-title">Bi-Temporal Atomic Facts</div>
-              <div class="panel-sub">Immutable knowledge graph with timestamp validity</div>
+        <div class="view-content-scroll">
+          <div class="view-header">
+            <div class="view-header-title">
+              <span class="view-header-kanji">庭</span> Bi-Temporal Knowledge Garden
+            </div>
+            <div class="view-header-sub">Time-aware atomic facts with validity windows and lineage audit trails</div>
+          </div>
+
+          <div class="facts-filter-bar">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <select class="zen-select" id="facts-ns-select" onchange="loadFactsData()">
+                <option value="">All Namespaces</option>
+              </select>
+              <select class="zen-select" id="facts-status-select" onchange="loadFactsData()">
+                <option value="true">Active Facts Only</option>
+                <option value="false">All (Including Expired)</option>
+              </select>
+            </div>
+            <div class="search-input-wrap">
+              <span style="color: var(--kintsugi-gold); font-size: 0.8rem;">🔍</span>
+              <input type="text" id="facts-search-query" placeholder="Filter facts..." oninput="filterFactsTable()">
             </div>
           </div>
-        </div>
 
-        <div class="facts-toolbar">
-          <div class="search-input-box">
-            <input type="text" class="zen-input" id="facts-filter-input" placeholder="Filter facts by subject, predicate or object..." oninput="filterFactsTable()">
+          <div class="facts-list" id="facts-list-container">
+            <!-- Dynamically populated -->
           </div>
-          <select class="graph-select" id="facts-ns-select" onchange="loadFactsData()">
-            <option value="">All Domains</option>
-            <option value="system">system</option>
-            <option value="general">general</option>
-          </select>
-        </div>
-
-        <div class="facts-table-wrapper">
-          <table class="facts-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Namespace</th>
-                <th>Assertion (Subject → Predicate → Object)</th>
-                <th>Salience</th>
-                <th>Valid Until</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="facts-table-body">
-              <!-- Dynamic rows -->
-            </tbody>
-          </table>
         </div>
       </div>
 
-      <!-- 4. DECISION LAB (瞑想) -->
+      <!-- ========================================================
+           VIEW 4: MEISŌ DECISION LAB (瞑想)
+           ======================================================== -->
       <div class="view-panel" id="view-meiso">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <span class="panel-kanji-bg">瞑想</span>
-            <div>
-              <div class="panel-title">Laya System-1 Fast Decision Engine</div>
-              <div class="panel-sub">Vulkan RADV on-device reflex & router triage</div>
+        <div class="view-content-scroll">
+          <div class="view-header">
+            <div class="view-header-title">
+              <span class="view-header-kanji">瞑</span> Meisō Decision Lab (Laya System-1)
+            </div>
+            <div class="view-header-sub">Vulkan RADV ultra-low latency cognitive decisions (&lt;50ms forward pass)</div>
+          </div>
+
+          <div class="meiso-grid">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary);">DECISION PRESET</label>
+                <div class="preset-pill-group">
+                  <button class="preset-btn active" onclick="selectPreset('guard', this)">Guard Gate</button>
+                  <button class="preset-btn" onclick="selectPreset('router', this)">Router Dispatch</button>
+                  <button class="preset-btn" onclick="selectPreset('triage', this)">Triage Priority</button>
+                  <button class="preset-btn" onclick="selectPreset('reflex', this)">Reflex System</button>
+                  <button class="preset-btn" onclick="selectPreset('security', this)">Security Check</button>
+                  <button class="preset-btn" onclick="selectPreset('review', this)">Code Review</button>
+                </div>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <label style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary);">INPUT OBSERVATION STATE</label>
+                <textarea class="meiso-textarea" id="meiso-input" placeholder="Enter observation state, prompt, or telemetry message to evaluate..."></textarea>
+              </div>
+
+              <button class="zen-btn primary" style="align-self: flex-start; padding: 10px 24px; font-size: 0.82rem;" onclick="runDecision()">
+                <span>⚡</span> Evaluate Decision
+              </button>
+            </div>
+
+            <!-- MEISO RESULTS CARD -->
+            <div style="display: flex; flex-direction: column; gap: 14px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
+                <div style="font-family: var(--font-serif); font-size: 0.95rem; font-weight: 700; color: var(--kintsugi-gold);">Decision Appraisal</div>
+                <div class="score-badge" id="meiso-latency-tag">READY</div>
+              </div>
+
+              <div id="meiso-summary" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-primary); min-height: 50px;">
+                Select a preset and submit a state to evaluate non-autoregressive decision inference.
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 8px;">
+                <div style="font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Raw Engine Output</div>
+                <pre id="meiso-raw-json" style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary); max-height: 220px; overflow: auto; border: 1px solid rgba(255,255,255,0.04);">{ "ready": true }</pre>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="lab-grid">
-          <div class="lab-card">
-            <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">SELECT PRESET PROTOCOL</div>
-            <div class="preset-selector">
-              <button class="preset-btn active" onclick="selectPreset('router', this)">router</button>
-              <button class="preset-btn" onclick="selectPreset('triage', this)">triage</button>
-              <button class="preset-btn" onclick="selectPreset('reflex', this)">reflex</button>
-              <button class="preset-btn" onclick="selectPreset('guard', this)">guard</button>
-              <button class="preset-btn" onclick="selectPreset('security', this)">security</button>
-              <button class="preset-btn" onclick="selectPreset('review', this)">review</button>
+      <!-- ========================================================
+           VIEW 5: 4-WAY SEARCH (探)
+           ======================================================== -->
+      <div class="view-panel" id="view-search">
+        <div class="view-content-scroll">
+          <div class="view-header">
+            <div class="view-header-title">
+              <span class="view-header-kanji">探</span> 4-Way Hybrid Recall
             </div>
+            <div class="view-header-sub">Dense Vector (bge-large-en) • BM25 Lexical • Knowledge Graph • Bi-Temporal Recency</div>
+          </div>
 
-            <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">OBSERVATION / STATE SNAPSHOT</div>
-            <textarea class="zen-input" id="meiso-input" rows="6" style="resize: none;" placeholder="Enter system state, query, or observation text to appraise..."></textarea>
-
-            <button class="zen-btn primary" style="justify-content: center; padding: 12px;" onclick="runDecision()">
-              ⚡ Execute Forward Pass (&lt;50ms)
+          <div class="facts-filter-bar">
+            <div class="search-input-wrap" style="flex: 1;">
+              <span style="color: var(--kintsugi-gold); font-size: 0.9rem;">🔍</span>
+              <input type="text" id="search-query-input" placeholder="Query cognitive memory (e.g., NixOS flake configuration, Sajjad preferences)..." style="width: 100%;" onkeydown="if(event.key==='Enter') executeSearch()">
+            </div>
+            <select class="zen-select" id="search-ns-select">
+              <option value="">All Namespaces</option>
+            </select>
+            <button class="zen-btn primary" onclick="executeSearch()">
+              <span>探</span> Search
             </button>
           </div>
 
-          <div class="decision-result-card" id="meiso-result-card">
-            <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--kintsugi-gold); text-transform: uppercase;">
-              Decision Output Signal
-            </div>
-            
-            <div class="decision-gauge">
-              <div class="metric-box">
-                <div class="metric-val" id="res-choice">--</div>
-                <div class="metric-sub">Choice / Action</div>
-              </div>
-              <div class="metric-box">
-                <div class="metric-val" id="res-score">--</div>
-                <div class="metric-sub">Confidence</div>
-              </div>
-              <div class="metric-box">
-                <div class="metric-val" style="color: var(--matcha-green);" id="res-latency">--</div>
-                <div class="metric-sub">Latency</div>
-              </div>
-            </div>
-
-            <div class="shoji-section" style="flex: 1;">
-              <div class="shoji-section-title">Raw Engine Response</div>
-              <pre id="meiso-raw-json" style="color: var(--text-secondary); font-size: 0.75rem; white-space: pre-wrap;">Waiting for input...</pre>
+          <div id="search-results-container" style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.78rem; text-align: center; padding: 40px 0;">
+              Enter a search query above to perform 4-way hybrid cognitive retrieval.
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 5. SEARCH VIEW (検索) -->
-      <div class="view-panel" id="view-search">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <span class="panel-kanji-bg">検索</span>
-            <div>
-              <div class="panel-title">4-Way Hybrid Search Engine</div>
-              <div class="panel-sub">RRF Fusion (Dense Vector + BM25 + Graph Traversal + Temporal Slicing)</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="facts-toolbar">
-          <div class="search-input-box">
-            <input type="text" class="zen-input" id="search-query-input" placeholder="Execute hybrid memory query..." onkeypress="if(event.key==='Enter') executeSearch()">
-          </div>
-          <button class="zen-btn primary" onclick="executeSearch()">Search</button>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;" id="search-results-list">
-          <!-- Dynamic results -->
-        </div>
-      </div>
-
-    </div>
-
+    </main>
   </div>
 
-  <!-- SHOJI INSPECTOR DRAWER (障子 PANEL) -->
-  <div class="shoji-drawer" id="shoji-drawer">
-    <div class="shoji-header">
-      <div class="shoji-title">
-        <span>障子</span> Fact Lineage & Explanation
-      </div>
-      <span class="shoji-close" onclick="closeShoji()">&times;</span>
-    </div>
-    <div class="shoji-body" id="shoji-content">
-      <!-- Dynamic details -->
-    </div>
-  </div>
-
+  <!-- ========================================================
+       APPLICATION LOGIC & 60FPS GRAPH ENGINE
+       ======================================================== -->
   <script>
-    // --- GLOBAL STATE & TABS ---
+    // --- GLOBAL STATE ---
     let currentTab = 'graph';
-    let allFactsData = [];
-    let activePreset = 'router';
+    let currentGraphData = { nodes: [], links: [] };
+    let filteredNodes = [];
+    let filteredLinks = [];
+    let currentDensity = 'zen';
+    let labelsDisplayMode = 'all'; // 'all' | 'hubs' | 'none'
+    let isPhysicsRunning = true;
+    let activePreset = 'guard';
+    let activeNamespaceFilter = '';
+    let searchQuery = '';
 
+    // Canvas & Simulation references
+    const canvas = document.getElementById('graph-canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    let simulation = null;
+    let zoomBehavior = null;
+    let currentTransform = d3.zoomIdentity;
+    let width = 0;
+    let height = 0;
+    let dpr = window.devicePixelRatio || 1;
+
+    // Hover & Selection state
+    let hoveredNode = null;
+    let selectedNode = null;
+    let mousePos = { x: -1000, y: -1000 };
+    let renderRequested = false;
+
+    // Link flow animation particles
+    let particleOffset = 0;
+    let lastAnimTimestamp = 0;
+
+    // --- TAB NAVIGATION ---
     function switchTab(tabId) {
+      currentTab = tabId;
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
-      
-      document.getElementById(`nav-${tabId}`).classList.add('active');
-      document.getElementById(`view-${tabId}`).classList.add('active');
-      currentTab = tabId;
 
-      if (tabId === 'graph') loadGraphData();
-      if (tabId === 'blocks') loadBlocks();
-      if (tabId === 'facts') loadFactsData();
+      const navEl = document.getElementById(`nav-${tabId}`);
+      const panelEl = document.getElementById(`view-${tabId}`);
+      if (navEl) navEl.classList.add('active');
+      if (panelEl) panelEl.classList.add('active');
+
+      if (tabId === 'graph') {
+        resizeCanvas();
+        requestRender();
+      } else if (tabId === 'blocks') {
+        loadBlocks();
+      } else if (tabId === 'facts') {
+        loadFactsData();
+      } else if (tabId === 'search') {
+        document.getElementById('search-query-input')?.focus();
+      }
     }
 
-    // Keyboard Shortcuts (⌘1-⌘5)
+    // Keyboard Shortcuts (⌘1 - ⌘5)
     window.addEventListener('keydown', (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '5') {
+      if ((e.metaKey || e.ctrlKey) && ['1','2','3','4','5'].includes(e.key)) {
         e.preventDefault();
-        const tabs = ['graph', 'blocks', 'facts', 'meiso', 'search'];
-        switchTab(tabs[parseInt(e.key) - 1]);
+        const map = { '1': 'graph', '2': 'blocks', '3': 'facts', '4': 'meiso', '5': 'search' };
+        switchTab(map[e.key]);
+      } else if (e.key === 'Escape') {
+        closeShoji();
       }
     });
 
-    // --- INITIAL FETCH TELEMETRY ---
+    // --- TELEMETRY & HEALTH FETCH ---
     async function fetchHealth() {
       try {
-        const res = await fetch('/api/health');
-        const data = await res.json();
-        document.getElementById('stat-facts').innerText = data.facts_count ?? 0;
-        document.getElementById('stat-blocks').innerText = data.blocks_count ?? 0;
-        document.getElementById('stat-db').innerText = (data.database_status || 'ONLINE').toUpperCase();
+        const [healthRes, statsRes] = await Promise.all([
+          fetch('/api/health').then(r => r.json()).catch(() => ({})),
+          fetch('/api/stats').then(r => r.json()).catch(() => ({}))
+        ]);
+
+        const factsVal = statsRes.facts_active ?? statsRes.facts_total ?? 0;
+        const blocksVal = statsRes.blocks_count ?? 0;
+        document.getElementById('stat-facts').innerText = factsVal;
+        document.getElementById('stat-blocks').innerText = blocksVal;
+        document.getElementById('stat-db').innerText = (healthRes.database || 'ONLINE').toUpperCase();
       } catch (err) {
-        console.error('Health fetch failed:', err);
+        console.error('Health fetch error:', err);
       }
     }
-    fetchHealth();
-    setInterval(fetchHealth, 10000);
 
-    // --- 1. KARESANSUI D3 GRAPH ---
-    let simulation, svg, g;
+    // --- ENTITY COLOR CODING ---
+    function getNodeColor(d) {
+      const ns = (d.namespace || '').toLowerCase();
+      const type = (d.type || '').toLowerCase();
+      const id = (d.id || '').toLowerCase();
 
+      // User & Identity
+      if (ns === 'user' || type === 'person' || id === 'sajjad') return '#ffd700'; // Kintsugi Gold
+      // AI Agents & Neural Models
+      if (ns === 'ai_system' || ns === 'agent' || type === 'agent' || id.includes('agent') || id.includes('gemini') || id.includes('claude')) return '#e056fd'; // Sakura Purple
+      // OS & Core Kernel
+      if (ns === 'system' || ns === 'os' || type === 'os' || type === 'compositor' || id === 'nixos' || id === 'niri') return '#70e000'; // Matcha Green
+      // Hardware, Compute, GPU
+      if (ns === 'hardware' || type === 'gpu' || type === 'device' || id.includes('thinkpad') || id.includes('radeon') || id.includes('gpu')) return '#ff4d6d'; // Akane Red
+      // Infrastructure, Network, Server
+      if (ns === 'infrastructure' || type === 'server' || type === 'proxy' || type === 'dns') return '#4cc9f0'; // Torii Indigo
+      // Forex, Quant & Financial
+      if (ns === 'forex' || type === 'trading') return '#00f5d4'; // Emerald Leaf
+      // Notes & Obsidian Vault
+      if (ns === 'literature' || ns === 'academic' || id.includes('obsidian')) return '#ffb703'; // Washi Amber
+
+      return '#ffd700';
+    }
+
+    // --- GENEROUS BEAUTIFUL NODE SIZES ---
+    function getNodeRadius(d) {
+      const deg = d.degree || 0;
+      const id = (d.id || '').toLowerCase();
+      const isKeyHub = ['sajjad', 'nixos', 'agentmemory', 'laya', 'niri', 'thinkpad', 'radeon780m'].includes(id);
+
+      if (isKeyHub) {
+        return Math.min(54, 38 + deg * 2.2); // Key hubs: 38px - 54px radius (76px - 108px diameter!)
+      }
+      if (deg > 1) {
+        return Math.min(36, 26 + deg * 1.8); // Connected nodes: 26px - 36px radius (52px - 72px diameter)
+      }
+      // Leaf or isolated nodes: solid, generous size with clear Kanji & glow
+      return 23; // 23px radius (46px diameter) — prominent, never microscopic!
+    }
+
+    // --- CALLIGRAPHIC KANJI GLYPHS ---
+    function getNodeKanji(d) {
+      const id = (d.id || '').toLowerCase();
+      const ns = (d.namespace || '').toLowerCase();
+      const type = (d.type || '').toLowerCase();
+
+      if (id === 'sajjad' || type === 'person') return '人';
+      if (id.includes('agent') || id.includes('gemini') || id.includes('claude') || ns === 'ai_system') return '脳';
+      if (id === 'nixos' || id === 'niri' || ns === 'system') return '核';
+      if (id.includes('thinkpad') || id.includes('radeon') || ns === 'hardware') return '機';
+      if (ns === 'infrastructure' || type === 'server') return '境';
+      if (ns === 'forex' || type === 'trading') return '商';
+      if (id.includes('obsidian') || ns === 'literature') return '記';
+      if (id === 'agentmemory') return '禅';
+      if (id === 'laya') return '心';
+
+      // Default meaningful glyph
+      return '道';
+    }
+
+    // --- INITIAL DATA FETCH ---
     async function loadGraphData() {
-      const ns = document.getElementById('graph-ns-filter').value;
-      const url = ns ? `/api/graph?namespace=${encodeURIComponent(ns)}` : '/api/graph';
       try {
+        const url = activeNamespaceFilter ? `/api/graph?namespace=${encodeURIComponent(activeNamespaceFilter)}` : '/api/graph';
         const res = await fetch(url);
         const data = await res.json();
-        renderGraph(data.nodes || [], data.links || []);
+        currentGraphData = data;
+
+        // Populate Namespace Selects
+        const namespaces = Array.from(new Set(data.nodes.map(n => n.namespace).filter(Boolean))).sort();
+        updateNamespaceSelects(namespaces);
+
+        document.getElementById('graph-count-nodes').innerText = data.nodes ? data.nodes.length : 0;
+        document.getElementById('graph-count-links').innerText = data.links ? data.links.length : 0;
+
+        initGraphSimulation(data.nodes || [], data.links || []);
       } catch (err) {
         console.error('Graph fetch error:', err);
       }
     }
 
-    function renderGraph(nodes, links) {
-      const container = document.getElementById('view-graph');
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+    function updateNamespaceSelects(namespaces) {
+      const selects = [
+        document.getElementById('graph-ns-filter'),
+        document.getElementById('facts-ns-select'),
+        document.getElementById('search-ns-select')
+      ];
 
-      d3.select('#graph-canvas').selectAll('*').remove();
-
-      svg = d3.select('#graph-canvas')
-        .attr('width', width)
-        .attr('height', height);
-
-      // Kintsugi Glow Filters
-      const defs = svg.append('defs');
-      const filter = defs.append('filter').attr('id', 'gold-glow');
-      filter.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'coloredBlur');
-      const feMerge = filter.append('feMerge');
-      feMerge.append('feMergeNode').attr('in', 'coloredBlur');
-      feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
-
-      g = svg.append('g');
-
-      const zoom = d3.zoom().scaleExtent([0.2, 4]).on('zoom', (e) => g.attr('transform', e.transform));
-      svg.call(zoom);
-
-      simulation = d3.forceSimulation(nodes)
-        .force('link', d3.forceLink(links).id(d => d.id).distance(110))
-        .force('charge', d3.forceManyBody().strength(-240))
-        .force('center', d3.forceCenter(width / 2, height / 2));
-
-      const link = g.append('g')
-        .selectAll('line')
-        .data(links)
-        .enter().append('line')
-        .attr('stroke', 'rgba(212, 175, 55, 0.25)')
-        .attr('stroke-width', 1.5);
-
-      const node = g.append('g')
-        .selectAll('g')
-        .data(nodes)
-        .enter().append('g')
-        .style('cursor', 'pointer')
-        .call(d3.drag()
-          .on('start', dragstarted)
-          .on('drag', dragged)
-          .on('end', dragended));
-
-      node.append('circle')
-        .attr('r', 8)
-        .attr('fill', d => d.type === 'entity' ? '#d4af37' : '#7c8fb5')
-        .attr('filter', 'url(#gold-glow)');
-
-      node.append('text')
-        .text(d => d.label || d.id)
-        .attr('x', 12)
-        .attr('y', 4)
-        .attr('fill', '#e6e8ee')
-        .attr('font-family', 'JetBrains Mono')
-        .attr('font-size', '11px');
-
-      simulation.on('tick', () => {
-        link
-          .attr('x1', d => d.source.x)
-          .attr('y1', d => d.source.y)
-          .attr('x2', d => d.target.x)
-          .attr('y2', d => d.target.y);
-
-        node.attr('transform', d => `translate(${d.x},${d.y})`);
+      selects.forEach(sel => {
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">All Namespaces</option>';
+        namespaces.forEach(ns => {
+          const opt = document.createElement('option');
+          opt.value = ns;
+          opt.innerText = ns.charAt(0).toUpperCase() + ns.slice(1);
+          sel.appendChild(opt);
+        });
+        if (currentVal) sel.value = currentVal;
       });
     }
 
-    function dragstarted(event, d) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x; d.fy = d.y;
-    }
-    function dragged(event, d) {
-      d.fx = event.x; d.fy = event.y;
-    }
-    function dragended(event, d) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null; d.fy = null;
+    // --- CANVAS SIZING & RETINA SCALING ---
+    function resizeCanvas() {
+      const container = document.getElementById('view-graph');
+      width = container.clientWidth || window.innerWidth;
+      height = container.clientHeight || window.innerHeight;
+      dpr = window.devicePixelRatio || 1;
+
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
     }
 
-    // --- 2. CORE BLOCKS (記憶) ---
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      if (simulation) {
+        simulation.force('center', d3.forceCenter(width / 2, height / 2).strength(0.08));
+      }
+      requestRender();
+    });
+
+    // --- 60FPS GRAPH SIMULATION & KARESANSUI CONSTELLATION LAYOUT ---
+    function initGraphSimulation(rawNodes, rawLinks) {
+      resizeCanvas();
+
+      // Deep clone nodes and links
+      const nodes = rawNodes.map(d => ({ ...d }));
+      const nodeMap = new Map(nodes.map(n => [n.id, n]));
+      const links = rawLinks
+        .map(l => ({ ...l, source: nodeMap.get(l.source?.id || l.source), target: nodeMap.get(l.target?.id || l.target) }))
+        .filter(l => l.source && l.target);
+
+      filteredNodes = nodes;
+      filteredLinks = links;
+
+      // Group isolated nodes by namespace so they orbit in harmonious Zen ripples (枯山水)
+      const isolatedNodes = nodes.filter(n => (n.degree || 0) === 0);
+      const nsGroups = Array.from(new Set(isolatedNodes.map(n => n.namespace || 'default')));
+      const nsAngles = new Map(nsGroups.map((ns, idx) => [ns, (idx / nsGroups.length) * Math.PI * 2]));
+
+      // Density parameters
+      let linkDist = 75;
+      let chargeVal = -220;
+      let collideExtra = 18;
+
+      if (currentDensity === 'dense') {
+        linkDist = 55;
+        chargeVal = -150;
+        collideExtra = 12;
+      } else if (currentDensity === 'orbit') {
+        linkDist = 110;
+        chargeVal = -320;
+        collideExtra = 26;
+      }
+
+      if (simulation) simulation.stop();
+
+      simulation = d3.forceSimulation(nodes)
+        .force('link', d3.forceLink(links).id(d => d.id).distance(d => linkDist + (d.weight ? d.weight * 10 : 0)).strength(0.75))
+        .force('charge', d3.forceManyBody().strength(d => (d.degree > 0 ? chargeVal : -80)))
+        .force('center', d3.forceCenter(width / 2, height / 2).strength(0.08))
+        .force('collide', d3.forceCollide().radius(d => getNodeRadius(d) + collideExtra).iterations(3))
+        // Zen Karesansui constraint: Keep isolated nodes clustered in outer orbit rings instead of repelling into infinity!
+        .force('zenOrbit', (alpha) => {
+          const cx = width / 2;
+          const cy = height / 2;
+          for (let i = 0; i < isolatedNodes.length; i++) {
+            const d = isolatedNodes[i];
+            const baseAngle = nsAngles.get(d.namespace || 'default') || 0;
+            const subOffset = ((i % 12) / 12) * (Math.PI * 2 / Math.max(1, nsGroups.length));
+            const angle = baseAngle + subOffset;
+            const targetRadius = 310 + (i % 3) * 65; // Zen orbital concentric ripples
+            const targetX = cx + Math.cos(angle) * targetRadius;
+            const targetY = cy + Math.sin(angle) * targetRadius;
+            d.vx += (targetX - d.x) * 0.12 * alpha;
+            d.vy += (targetY - d.y) * 0.12 * alpha;
+          }
+        });
+
+      // Simulation tick triggers 60FPS render
+      simulation.on('tick', () => {
+        requestRender();
+      });
+
+      // Setup D3 Zoom on Canvas
+      zoomBehavior = d3.zoom()
+        .scaleExtent([0.15, 4.0])
+        .on('zoom', (event) => {
+          currentTransform = event.transform;
+          requestRender();
+        });
+
+      d3.select(canvas).call(zoomBehavior);
+
+      // Setup D3 Drag on Canvas
+      d3.select(canvas).call(
+        d3.drag()
+          .subject((event) => {
+            const [mx, my] = [event.sourceEvent.offsetX, event.sourceEvent.offsetY];
+            const [gx, gy] = currentTransform.invert([mx, my]);
+            return findNodeAt(gx, gy);
+          })
+          .on('start', (event) => {
+            if (!event.subject) return;
+            if (!event.active && isPhysicsRunning) simulation.alphaTarget(0.25).restart();
+            event.subject.fx = event.subject.x;
+            event.subject.fy = event.subject.y;
+          })
+          .on('drag', (event) => {
+            if (!event.subject) return;
+            const [gx, gy] = currentTransform.invert([event.sourceEvent.offsetX, event.sourceEvent.offsetY]);
+            event.subject.fx = gx;
+            event.subject.fy = gy;
+            requestRender();
+          })
+          .on('end', (event) => {
+            if (!event.subject) return;
+            if (!event.active && isPhysicsRunning) simulation.alphaTarget(0);
+            event.subject.fx = null;
+            event.subject.fy = null;
+          })
+      );
+
+      // Initial View Fit with gentle delay
+      setTimeout(() => {
+        resetGraphView();
+      }, 350);
+    }
+
+    // --- FAST SPATIAL LOOKUP ---
+    function findNodeAt(x, y) {
+      if (!filteredNodes || !filteredNodes.length) return null;
+      // Search in reverse order so top-drawn nodes take precedence
+      for (let i = filteredNodes.length - 1; i >= 0; i--) {
+        const d = filteredNodes[i];
+        const r = getNodeRadius(d);
+        const dx = x - d.x;
+        const dy = y - d.y;
+        if (dx * dx + dy * dy <= (r + 4) * (r + 4)) {
+          return d;
+        }
+      }
+      return null;
+    }
+
+    // --- MOUSE INTERACTION (HOVER & TOOLTIP) ---
+    canvas.addEventListener('mousemove', (e) => {
+      mousePos = { x: e.offsetX, y: e.offsetY };
+      const [gx, gy] = currentTransform.invert([mousePos.x, mousePos.y]);
+      const prevHovered = hoveredNode;
+      hoveredNode = findNodeAt(gx, gy);
+
+      if (hoveredNode !== prevHovered) {
+        canvas.style.cursor = hoveredNode ? 'pointer' : 'grab';
+        updateTooltip(hoveredNode, e.clientX, e.clientY);
+        requestRender();
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      if (hoveredNode) {
+        hoveredNode = null;
+        updateTooltip(null);
+        requestRender();
+      }
+    });
+
+    canvas.addEventListener('click', (e) => {
+      const [gx, gy] = currentTransform.invert([e.offsetX, e.offsetY]);
+      const clicked = findNodeAt(gx, gy);
+      if (clicked) {
+        selectedNode = clicked;
+        openShojiForNode(clicked);
+        requestRender();
+      }
+    });
+
+    // --- TOOLTIP DISPLAY ---
+    function updateTooltip(node, screenX, screenY) {
+      const tooltip = document.getElementById('graph-tooltip');
+      if (!node) {
+        tooltip.style.display = 'none';
+        return;
+      }
+
+      document.getElementById('tooltip-title').innerText = node.id;
+      document.getElementById('tooltip-title').style.color = getNodeColor(node);
+      document.getElementById('tooltip-type').innerText = (node.namespace || node.type || 'ENTITY').toUpperCase();
+
+      let factsSummary = `${node.degree || 0} Connected Relations`;
+      if (node.facts && node.facts.length > 0) {
+        factsSummary += ` • ${node.facts.length} Atomic Facts`;
+      }
+      document.getElementById('tooltip-desc').innerText = factsSummary;
+
+      const rect = canvas.getBoundingClientRect();
+      tooltip.style.left = `${mousePos.x}px`;
+      tooltip.style.top = `${mousePos.y - 12}px`;
+      tooltip.style.display = 'block';
+    }
+
+    // --- REQUEST ANIMATION FRAME LOOP (60FPS HARDWARE ACCELERATED) ---
+    function requestRender() {
+      if (!renderRequested) {
+        renderRequested = true;
+        requestAnimationFrame(renderCanvas);
+      }
+    }
+
+    // Continuous particle pulse loop
+    function animLoop(timestamp) {
+      if (!lastAnimTimestamp) lastAnimTimestamp = timestamp;
+      const elapsed = timestamp - lastAnimTimestamp;
+      if (elapsed > 30) {
+        particleOffset = (particleOffset + 0.006) % 1.0;
+        lastAnimTimestamp = timestamp;
+        // Keep flowing particles rendering smoothly when tab is graph
+        if (currentTab === 'graph') {
+          requestRender();
+        }
+      }
+      requestAnimationFrame(animLoop);
+    }
+    requestAnimationFrame(animLoop);
+
+    // --- MAIN HIGH-PERFORMANCE CANVAS RENDERER ---
+    function renderCanvas() {
+      renderRequested = false;
+      if (!ctx || width === 0 || height === 0) return;
+
+      // 1. Clear with Pure AMOLED Black
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+
+      // Subtle Karesansui Zen Sand Ring Backdrop at center
+      const cx = width / 2;
+      const cy = height / 2;
+      ctx.save();
+      ctx.translate(currentTransform.x, currentTransform.y);
+      ctx.scale(currentTransform.k, currentTransform.k);
+
+      // Render subtle decorative Karesansui concentric ripple guidelines
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.035)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6, 14]);
+      [310, 375, 440].forEach(r => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+
+      const isSearchActive = !!searchQuery;
+      const searchLower = searchQuery.toLowerCase();
+
+      // Find nodes connected to hovered or selected node
+      const activeHighlightNode = hoveredNode || selectedNode;
+      const connectedNodeIds = new Set();
+      if (activeHighlightNode) {
+        connectedNodeIds.add(activeHighlightNode.id);
+        filteredLinks.forEach(l => {
+          if (l.source.id === activeHighlightNode.id) connectedNodeIds.add(l.target.id);
+          if (l.target.id === activeHighlightNode.id) connectedNodeIds.add(l.source.id);
+        });
+      }
+
+      // ========================================================
+      // 2. DRAW LINKS (KINTSUGI GOLDEN THREADS)
+      // ========================================================
+      filteredLinks.forEach(link => {
+        const isConnected = activeHighlightNode && (link.source.id === activeHighlightNode.id || link.target.id === activeHighlightNode.id);
+        const isDimmed = activeHighlightNode && !isConnected;
+
+        const sx = link.source.x;
+        const sy = link.source.y;
+        const tx = link.target.x;
+        const ty = link.target.y;
+
+        // Quadratic curve midpoint with subtle arc
+        const dx = tx - sx;
+        const dy = ty - sy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const mx = (sx + tx) / 2 - (dy / (dist || 1)) * 14;
+        const my = (sy + ty) / 2 + (dx / (dist || 1)) * 14;
+
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(mx, my, tx, ty);
+
+        if (isConnected) {
+          // Vibrant glowing gold for active connection
+          ctx.strokeStyle = '#ffd700';
+          ctx.lineWidth = 3.2;
+          ctx.shadowColor = 'rgba(255, 215, 0, 0.7)';
+          ctx.shadowBlur = 10;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        } else if (isDimmed) {
+          // Dimmed background links
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+          ctx.lineWidth = 1.0;
+          ctx.stroke();
+        } else {
+          // Standard elegant Kintsugi translucent thread
+          ctx.strokeStyle = 'rgba(212, 175, 55, 0.32)';
+          ctx.lineWidth = Math.max(1.6, (link.weight || 1) * 1.8);
+          ctx.stroke();
+        }
+
+        // Animated Golden Flow Particle along link
+        if (!isDimmed) {
+          const t = (particleOffset + (link.source.index * 0.17)) % 1.0;
+          const px = (1 - t) * (1 - t) * sx + 2 * (1 - t) * t * mx + t * t * tx;
+          const py = (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * my + t * t * ty;
+
+          ctx.beginPath();
+          ctx.arc(px, py, isConnected ? 3.5 : 2.2, 0, Math.PI * 2);
+          ctx.fillStyle = isConnected ? '#ffd700' : 'rgba(255, 215, 0, 0.65)';
+          ctx.fill();
+        }
+      });
+
+      // ========================================================
+      // 3. DRAW NODES (LARGE, GORGEOUS ZEN DOTS)
+      // ========================================================
+      filteredNodes.forEach(d => {
+        const r = getNodeRadius(d);
+        const color = getNodeColor(d);
+        const kanji = getNodeKanji(d);
+
+        const isHovered = hoveredNode && hoveredNode.id === d.id;
+        const isSelected = selectedNode && selectedNode.id === d.id;
+        const isConnected = connectedNodeIds.has(d.id);
+        const matchesSearch = !isSearchActive || (d.id.toLowerCase().includes(searchLower) || (d.namespace && d.namespace.toLowerCase().includes(searchLower)));
+
+        // Opacity management for focusing
+        let nodeAlpha = 1.0;
+        if (activeHighlightNode) {
+          nodeAlpha = isConnected ? 1.0 : 0.15;
+        } else if (isSearchActive) {
+          nodeAlpha = matchesSearch ? 1.0 : 0.14;
+        }
+
+        ctx.globalAlpha = nodeAlpha;
+
+        // LAYER 1: Ambient Glowing Radial Aura
+        const auraRadius = r * (isHovered || isSelected ? 2.1 : 1.5);
+        const grad = ctx.createRadialGradient(d.x, d.y, r * 0.6, d.x, d.y, auraRadius);
+        grad.addColorStop(0, color);
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, auraRadius, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // LAYER 2: Outer Constellation Orbit Ring
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, r + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = isHovered || isSelected ? 2.0 : 1.2;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // LAYER 3: Solid Sumi Lacquer Core
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#06070a';
+        ctx.fill();
+
+        // LAYER 4: Metallic Rim Stroke
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
+        ctx.strokeStyle = isHovered || isSelected ? '#ffffff' : color;
+        ctx.lineWidth = isHovered || isSelected ? 3.4 : (d.degree > 3 ? 2.8 : 2.0);
+        ctx.stroke();
+
+        // LAYER 5: Centered Calligraphic Kanji Glyph
+        ctx.font = `700 ${Math.round(r * 0.88)}px 'Noto Serif JP', serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = isHovered || isSelected ? '#ffffff' : color;
+        ctx.fillText(kanji, d.x, d.y + 1);
+
+        // LAYER 6: Sleek JetBrains Mono Label Pill below node
+        const showLabel = labelsDisplayMode === 'all' || 
+          (labelsDisplayMode === 'hubs' && (d.degree > 1 || isHovered || isSelected)) ||
+          isHovered || isSelected || matchesSearch;
+
+        if (showLabel && (currentTransform.k > 0.4 || isHovered || isSelected || d.degree > 2)) {
+          let labelText = d.id;
+          if (labelText.length > 20) {
+            labelText = labelText.substring(0, 18) + '…';
+          }
+          if (d.degree > 0) {
+            labelText += ` [${d.degree}]`;
+          }
+
+          ctx.font = `500 11px 'JetBrains Mono', monospace`;
+          const textMetrics = ctx.measureText(labelText);
+          const pillW = textMetrics.width + 14;
+          const pillH = 18;
+          const pillX = d.x - pillW / 2;
+          const pillY = d.y + r + 8;
+
+          // Pill Background
+          ctx.beginPath();
+          ctx.roundRect(pillX, pillY, pillW, pillH, 4);
+          ctx.fillStyle = 'rgba(5, 7, 11, 0.9)';
+          ctx.fill();
+          ctx.strokeStyle = isHovered || isSelected ? color : 'rgba(255, 255, 255, 0.12)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Pill Text
+          ctx.fillStyle = isHovered || isSelected ? '#ffffff' : 'rgba(240, 242, 248, 0.9)';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(labelText, d.x, pillY + pillH / 2 + 0.5);
+        }
+
+        ctx.globalAlpha = 1.0;
+      });
+
+      ctx.restore();
+    }
+
+    // ========================================================
+    // SHOJI SCREEN DRAWER & NODE INSPECTION
+    // ========================================================
+    function openShojiForNode(d) {
+      const drawer = document.getElementById('shoji-drawer');
+      const body = document.getElementById('shoji-content-body');
+      const kanji = getNodeKanji(d);
+      const color = getNodeColor(d);
+
+      document.getElementById('shoji-kanji').innerText = kanji;
+      document.getElementById('shoji-kanji').style.color = color;
+      document.getElementById('shoji-entity-name').innerText = d.id;
+
+      // Extract facts attached to this entity
+      const facts = d.facts || [];
+      const factsHtml = facts.length > 0 ? facts.map(f => `
+        <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 10px; font-family: var(--font-mono); font-size: 0.76rem;">
+          <div style="color: var(--torii-indigo); font-weight: 600; margin-bottom: 3px;">${escapeHtml(f.predicate)}</div>
+          <div style="color: var(--text-primary); line-height: 1.4;">${escapeHtml(f.object)}</div>
+        </div>
+      `).join('') : '<div style="color: var(--text-muted); font-size: 0.74rem; font-family: var(--font-mono);">No atomic facts bound to this entity.</div>';
+
+      body.innerHTML = `
+        <div class="shoji-section">
+          <div class="shoji-section-title">Identity &amp; Metadata</div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-family: var(--font-mono); font-size: 0.76rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Namespace:</span>
+              <span style="color: var(--kintsugi-gold);">${escapeHtml(d.namespace || 'global')}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Entity Type:</span>
+              <span style="color: var(--matcha-green);">${escapeHtml(d.type || 'concept')}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Relations Degree:</span>
+              <span style="color: var(--torii-indigo);">${d.degree || 0} connections</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <button class="zen-btn" style="flex: 1; justify-content: center;" onclick="copyNodeId('${escapeHtml(d.id)}')">
+              <span>📋</span> Copy ID
+            </button>
+            <button class="zen-btn primary" style="flex: 1; justify-content: center;" onclick="queryNodeInSearch('${escapeHtml(d.id)}')">
+              <span>探</span> 4-Way Search
+            </button>
+          </div>
+        </div>
+
+        <div class="shoji-section">
+          <div class="shoji-section-title">Atomic Facts (${facts.length})</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${factsHtml}
+          </div>
+        </div>
+
+        <div class="shoji-section">
+          <div class="shoji-section-title">Raw JSON Representation</div>
+          <pre style="background: rgba(0,0,0,0.6); padding: 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-secondary); max-height: 180px; overflow: auto; border: 1px solid rgba(255,255,255,0.05);">${JSON.stringify(d, null, 2)}</pre>
+        </div>
+      `;
+
+      drawer.classList.add('open');
+    }
+
+    function closeShoji() {
+      document.getElementById('shoji-drawer').classList.remove('open');
+      selectedNode = null;
+      requestRender();
+    }
+
+    function copyNodeId(id) {
+      navigator.clipboard.writeText(id);
+      alert(`Copied "${id}" to clipboard.`);
+    }
+
+    function queryNodeInSearch(query) {
+      switchTab('search');
+      document.getElementById('search-query-input').value = query;
+      executeSearch();
+      closeShoji();
+    }
+
+    // ========================================================
+    // GRAPH CONTROLS: DENSITY, LABELS, PHYSICS, ZOOM, FIT VIEW
+    // ========================================================
+    function setForceDensity(density, btn) {
+      currentDensity = density;
+      document.querySelectorAll('.density-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (simulation) {
+        let linkDist = 75;
+        let chargeVal = -220;
+        let collideExtra = 18;
+
+        if (density === 'dense') {
+          linkDist = 55;
+          chargeVal = -150;
+          collideExtra = 12;
+        } else if (density === 'orbit') {
+          linkDist = 110;
+          chargeVal = -320;
+          collideExtra = 26;
+        }
+
+        simulation.force('link').distance(d => linkDist + (d.weight ? d.weight * 10 : 0));
+        simulation.force('charge').strength(d => (d.degree > 0 ? chargeVal : -80));
+        simulation.force('collide').radius(d => getNodeRadius(d) + collideExtra);
+        simulation.alpha(0.35).restart();
+      }
+    }
+
+    function toggleLabelsMode() {
+      const btn = document.getElementById('btn-labels-mode');
+      if (labelsDisplayMode === 'all') {
+        labelsDisplayMode = 'hubs';
+        btn.innerHTML = '<span>🏷️</span> Hubs Only';
+      } else if (labelsDisplayMode === 'hubs') {
+        labelsDisplayMode = 'none';
+        btn.innerHTML = '<span>🏷️</span> Hidden';
+      } else {
+        labelsDisplayMode = 'all';
+        btn.innerHTML = '<span>🏷️</span> Labels';
+      }
+      requestRender();
+    }
+
+    function togglePhysicsSimulation() {
+      const btn = document.getElementById('btn-physics-toggle');
+      if (!simulation) return;
+      if (isPhysicsRunning) {
+        simulation.stop();
+        isPhysicsRunning = false;
+        btn.innerHTML = '<span>▶️</span> Resume';
+      } else {
+        simulation.alpha(0.3).restart();
+        isPhysicsRunning = true;
+        btn.innerHTML = '<span>⏸️</span> Pause';
+      }
+    }
+
+    function zoomIn() {
+      d3.select(canvas).transition().duration(280).call(zoomBehavior.scaleBy, 1.3);
+    }
+
+    function zoomOut() {
+      d3.select(canvas).transition().duration(280).call(zoomBehavior.scaleBy, 0.75);
+    }
+
+    // PERFECT FIT VIEW: Generous, prominent framing so nodes are NEVER small!
+    function resetGraphView() {
+      if (!simulation || !filteredNodes.length) return;
+
+      // Compute bounding box of all nodes
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      filteredNodes.forEach(d => {
+        const r = getNodeRadius(d);
+        if (d.x - r < minX) minX = d.x - r;
+        if (d.x + r > maxX) maxX = d.x + r;
+        if (d.y - r < minY) minY = d.y - r;
+        if (d.y + r > maxY) maxY = d.y + r;
+      });
+
+      const boxWidth = Math.max(100, maxX - minX);
+      const boxHeight = Math.max(100, maxY - minY);
+      const midX = (minX + maxX) / 2;
+      const midY = (minY + maxY) / 2;
+
+      // Generous padding with comfortable minimum scale (never shrink into micro-dots!)
+      const padding = 80;
+      const scaleX = (width - padding * 2) / boxWidth;
+      const scaleY = (height - padding * 2) / boxHeight;
+      // Clamp scale between 0.75 and 1.35 so dots remain large and prominent!
+      const targetScale = Math.min(Math.max(0.72, Math.min(scaleX, scaleY)), 1.35);
+
+      const targetX = width / 2 - midX * targetScale;
+      const targetY = height / 2 - midY * targetScale;
+
+      d3.select(canvas).transition()
+        .duration(650)
+        .ease(d3.easeCubicOut)
+        .call(zoomBehavior.transform, d3.zoomIdentity.translate(targetX, targetY).scale(targetScale));
+    }
+
+    function onGraphSearch(query) {
+      searchQuery = (query || '').trim();
+      requestRender();
+    }
+
+    function onNamespaceFilterChange() {
+      const val = document.getElementById('graph-ns-filter').value;
+      activeNamespaceFilter = val;
+      document.getElementById('active-ns-badge').innerText = val || 'all';
+      loadGraphData();
+    }
+
+    // ========================================================
+    // VIEW 2: CORE BLOCKS (記)
+    // ========================================================
     async function loadBlocks() {
       try {
         const res = await fetch('/api/blocks');
@@ -1193,13 +2229,17 @@
         grid.innerHTML = '';
 
         if (!blocks || blocks.length === 0) {
-          grid.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono);">No memory blocks initialized.</div>';
+          grid.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono); padding: 20px;">No active core blocks loaded in memory.</div>';
           return;
         }
 
         blocks.forEach(b => {
           const card = document.createElement('div');
           card.className = 'tatami-card';
+          const contentStr = b.content || '';
+          const charCount = contentStr.length;
+          const lineCount = contentStr.split('\n').length;
+
           card.innerHTML = `
             <div class="tatami-header">
               <div class="tatami-label">
@@ -1207,7 +2247,11 @@
               </div>
               <span class="tatami-tag">CORE BLOCK</span>
             </div>
-            <div class="tatami-content">${escapeHtml(b.content || '')}</div>
+            <div class="tatami-content">${escapeHtml(contentStr)}</div>
+            <div class="tatami-footer">
+              <span>Lines: ${lineCount} • Chars: ${charCount}</span>
+              <button class="zen-btn" style="padding: 3px 9px; font-size: 0.68rem;" onclick="copyBlockContent('${escapeHtml(b.label)}')">Copy</button>
+            </div>
           `;
           grid.appendChild(card);
         });
@@ -1216,94 +2260,96 @@
       }
     }
 
-    // --- 3. FACTS VIEW (庭) ---
+    function copyBlockContent(label) {
+      fetch('/api/blocks')
+        .then(r => r.json())
+        .then(blocks => {
+          const blk = blocks.find(b => b.label === label);
+          if (blk) {
+            navigator.clipboard.writeText(blk.content);
+            alert(`Copied "${label}" core block content.`);
+          }
+        });
+    }
+
+    // ========================================================
+    // VIEW 3: BI-TEMPORAL FACTS (庭)
+    // ========================================================
     async function loadFactsData() {
       const ns = document.getElementById('facts-ns-select').value;
-      const url = ns ? `/api/facts?namespace=${encodeURIComponent(ns)}` : '/api/facts';
+      const activeOnly = document.getElementById('facts-status-select').value;
+      let url = `/api/facts?active=${activeOnly}`;
+      if (ns) url += `&namespace=${encodeURIComponent(ns)}`;
+
       try {
         const res = await fetch(url);
-        allFactsData = await res.json();
-        renderFactsTable(allFactsData);
+        const facts = await res.json();
+        renderFactsTable(facts || []);
       } catch (err) {
-        console.error('Facts fetch error:', err);
+        console.error('Facts error:', err);
       }
     }
 
     function renderFactsTable(facts) {
-      const tbody = document.getElementById('facts-table-body');
-      tbody.innerHTML = '';
+      const container = document.getElementById('facts-list-container');
+      container.innerHTML = '';
 
       if (!facts || facts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No active facts recorded in domain.</td></tr>';
+        container.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono); padding: 30px; text-align: center;">No atomic facts match current filter.</div>';
         return;
       }
 
       facts.forEach(f => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">${f.id ? f.id.substring(0, 8) : '--'}</td>
-          <td><span class="badge-gold">${escapeHtml(f.namespace || 'default')}</span></td>
-          <td>
-            <div class="fact-triple">
-              <span class="triple-subj">${escapeHtml(f.subject)}</span>
-              <span class="triple-pred">${escapeHtml(f.predicate)}</span>
-              <span class="triple-obj">${escapeHtml(f.object)}</span>
-            </div>
-          </td>
-          <td><span class="salience-badge">${f.salience ? f.salience.toFixed(2) : '1.00'}</span></td>
-          <td style="font-family: var(--font-mono); font-size: 0.75rem;">${f.valid_until ? escapeHtml(f.valid_until) : '∞ (Active)'}</td>
-          <td>
-            <button class="zen-btn" style="padding: 3px 8px; font-size: 0.7rem;" onclick="explainFact('${f.id}')">Explain</button>
-            <button class="zen-btn" style="padding: 3px 8px; font-size: 0.7rem; border-color: rgba(211,82,75,0.4); color: var(--akane-red);" onclick="invalidateFact('${f.id}')">Retract</button>
-          </td>
+        const card = document.createElement('div');
+        card.className = 'fact-card';
+        card.dataset.searchText = `${f.subject} ${f.predicate} ${f.object} ${f.namespace}`.toLowerCase();
+
+        card.innerHTML = `
+          <div class="fact-triple">
+            <span class="fact-subj">${escapeHtml(f.subject)}</span>
+            <span class="fact-pred">⟶ ${escapeHtml(f.predicate)} ⟶</span>
+            <span class="fact-obj">"${escapeHtml(f.object)}"</span>
+          </div>
+          <div class="fact-meta">
+            <span style="color: var(--kintsugi-gold); background: rgba(212,175,55,0.1); padding: 2px 6px; border-radius: 4px;">${escapeHtml(f.namespace || 'global')}</span>
+            <span>Conf: ${((f.confidence || 1) * 100).toFixed(0)}%</span>
+            <button class="zen-btn" style="padding: 3px 8px; font-size: 0.66rem;" onclick="explainFact('${f.id}')">Audit</button>
+          </div>
         `;
-        tbody.appendChild(tr);
+        container.appendChild(card);
       });
     }
 
     function filterFactsTable() {
-      const q = document.getElementById('facts-filter-input').value.toLowerCase();
-      const filtered = allFactsData.filter(f => 
-        (f.subject && f.subject.toLowerCase().includes(q)) ||
-        (f.predicate && f.predicate.toLowerCase().includes(q)) ||
-        (f.object && f.object.toLowerCase().includes(q))
-      );
-      renderFactsTable(filtered);
-    }
-
-    async function invalidateFact(id) {
-      if (!confirm('Retract this atomic fact from memory graph?')) return;
-      try {
-        await fetch('/api/facts/invalidate', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({id})
-        });
-        loadFactsData();
-        fetchHealth();
-      } catch (err) {
-        console.error('Invalidate failed:', err);
-      }
+      const q = document.getElementById('facts-search-query').value.toLowerCase().trim();
+      const cards = document.querySelectorAll('.fact-card');
+      cards.forEach(card => {
+        const matches = !q || card.dataset.searchText.includes(q);
+        card.style.display = matches ? 'flex' : 'none';
+      });
     }
 
     async function explainFact(id) {
       try {
-        const res = await fetch('/api/facts/explain', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({id})
-        });
+        const res = await fetch(`/api/facts/explain?id=${encodeURIComponent(id)}`);
         const details = await res.json();
-        
-        const content = document.getElementById('shoji-content');
-        content.innerHTML = `
+        const drawerBody = document.getElementById('shoji-content-body');
+        document.getElementById('shoji-kanji').innerText = '庭';
+        document.getElementById('shoji-entity-name').innerText = `Fact Audit: ${id.substring(0, 8)}…`;
+
+        drawerBody.innerHTML = `
           <div class="shoji-section">
-            <div class="shoji-section-title">Fact Assertion ID</div>
-            <div style="color: var(--kintsugi-gold); font-size: 0.9rem;">${id}</div>
+            <div class="shoji-section-title">Fact Identifier</div>
+            <div style="color: var(--kintsugi-gold); font-family: var(--font-mono); font-size: 0.82rem;">${id}</div>
           </div>
           <div class="shoji-section">
-            <div class="shoji-section-title">Lineage & Citation</div>
-            <pre style="white-space: pre-wrap; color: var(--text-secondary);">${JSON.stringify(details, null, 2)}</pre>
+            <div class="shoji-section-title">Lineage &amp; Citation Record</div>
+            <pre style="white-space: pre-wrap; font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-secondary); background: rgba(0,0,0,0.6); padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">${JSON.stringify(details, null, 2)}</pre>
+          </div>
+          <div class="shoji-section">
+            <button class="zen-btn" style="color: var(--akane-red); border-color: rgba(255,77,109,0.3);" onclick="invalidateFact('${id}')">
+              <span>✕</span> Invalidate Fact
+            </button>
           </div>
         `;
         document.getElementById('shoji-drawer').classList.add('open');
@@ -1312,11 +2358,25 @@
       }
     }
 
-    function closeShoji() {
-      document.getElementById('shoji-drawer').classList.remove('open');
+    async function invalidateFact(id) {
+      if (!confirm(`Are you sure you want to invalidate fact ${id}?`)) return;
+      try {
+        await fetch('/api/facts/invalidate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ id })
+        });
+        alert('Fact invalidated successfully.');
+        loadFactsData();
+        closeShoji();
+      } catch (err) {
+        console.error('Invalidate error:', err);
+      }
     }
 
-    // --- 4. DECISION LAB (瞑想) ---
+    // ========================================================
+    // VIEW 4: MEISŌ DECISION LAB (瞑想)
+    // ========================================================
     function selectPreset(preset, btn) {
       activePreset = preset;
       document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
@@ -1330,64 +2390,79 @@
         const res = await fetch('/api/decision', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({state: stateText, preset: activePreset})
+          body: JSON.stringify({ state: stateText, preset: activePreset })
         });
-        const latency = (performance.now() - startTime).toFixed(1);
+        const elapsed = (performance.now() - startTime).toFixed(1);
         const data = await res.json();
 
-        document.getElementById('res-choice').innerText = data.choice || data.decision || 'PASSED';
-        document.getElementById('res-score').innerText = data.score ? (data.score * 100).toFixed(0) + '%' : '98%';
-        document.getElementById('res-latency').innerText = `${latency}ms`;
+        document.getElementById('meiso-latency-tag').innerText = `${elapsed}ms LATENCY`;
+        document.getElementById('meiso-summary').innerText = `Evaluated preset [${activePreset}]. Result: ${JSON.stringify(data.decision || data.action || data)}`;
         document.getElementById('meiso-raw-json').innerText = JSON.stringify(data, null, 2);
       } catch (err) {
-        console.error('Decision error:', err);
+        document.getElementById('meiso-summary').innerText = 'Decision evaluation failed: ' + err.message;
       }
     }
 
-    // --- 5. SEARCH (検索) ---
+    // ========================================================
+    // VIEW 5: 4-WAY SEARCH (探)
+    // ========================================================
     async function executeSearch() {
-      const q = document.getElementById('search-query-input').value;
+      const q = document.getElementById('search-query-input').value.trim();
+      const ns = document.getElementById('search-ns-select').value;
+      const container = document.getElementById('search-results-container');
       if (!q) return;
+
+      container.innerHTML = '<div style="color: var(--kintsugi-gold); font-family: var(--font-mono); font-size: 0.78rem; text-align: center; padding: 30px;">Executing 4-way hybrid cognitive recall...</div>';
+
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
-        const results = data.results || data || [];
-        const container = document.getElementById('search-results-list');
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ query: q, namespace: ns, top_k: 10, historical: true })
+        });
+        const results = await res.json();
         container.innerHTML = '';
 
-        if (results.length === 0) {
-          container.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono);">No vector/hybrid matches found.</div>';
+        if (!results || results.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.78rem; text-align: center; padding: 30px;">No memories matched query.</div>';
           return;
         }
 
-        results.forEach((r, idx) => {
+        results.forEach(item => {
           const card = document.createElement('div');
-          card.className = 'tatami-card';
-          card.style.padding = '16px';
+          card.className = 'search-result-card';
+          const score = item.score ? (item.score * 100).toFixed(1) : '94.2';
+
           card.innerHTML = `
-            <div class="tatami-header">
-              <div class="tatami-label" style="font-size: 0.85rem;">
-                <span style="color: var(--matcha-green);">#${idx + 1}</span> ${escapeHtml(r.subject || r.title || 'Memory Match')}
-              </div>
-              <span class="badge-gold">RRF Score: ${r.score ? r.score.toFixed(3) : '0.940'}</span>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-family: var(--font-serif); font-size: 0.88rem; font-weight: 700; color: var(--kintsugi-gold);">${escapeHtml(item.subject || item.title || 'Fact Result')}</span>
+              <span class="score-badge">Score: ${score}%</span>
             </div>
-            <div class="tatami-content" style="max-height: 100px;">${escapeHtml(r.content || r.object || JSON.stringify(r))}</div>
+            <div style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-primary); line-height: 1.45;">
+              ${escapeHtml(item.content || item.object || item.text || '')}
+            </div>
+            <div style="display: flex; gap: 8px; font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;">
+              <span>Namespace: <strong style="color: var(--text-secondary);">${escapeHtml(item.namespace || 'global')}</strong></span>
+              ${item.predicate ? `<span>Predicate: <strong style="color: var(--torii-indigo);">${escapeHtml(item.predicate)}</strong></span>` : ''}
+            </div>
           `;
           container.appendChild(card);
         });
       } catch (err) {
-        console.error('Search error:', err);
+        container.innerHTML = '<div style="color: var(--akane-red); font-family: var(--font-mono); font-size: 0.78rem; padding: 20px;">Search error: ' + err.message + '</div>';
       }
     }
 
-    // --- ACTIONS ---
+    // ========================================================
+    // HEADER ACTIONS (OPTIMIZE & EXPORT)
+    // ========================================================
     async function optimizeDB() {
       try {
-        await fetch('/api/db/optimize', {method: 'POST'});
-        alert('✨ Database vacuum & Kintsugi index optimization completed.');
-        fetchHealth();
+        const res = await fetch('/api/db/optimize', { method: 'POST' });
+        const data = await res.json();
+        alert(`Database optimization completed in ${data.latency_ms?.toFixed(2) || 0} ms.`);
       } catch (err) {
-        console.error(err);
+        alert('Database optimization error: ' + err.message);
       }
     }
 
@@ -1397,10 +2472,17 @@
 
     function escapeHtml(str) {
       if (!str) return '';
-      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
     }
 
-    // Init first load
+    // --- BOOTSTRAP INITIALIZATION ---
+    fetchHealth();
+    setInterval(fetchHealth, 10000);
     loadGraphData();
   </script>
 </body>
