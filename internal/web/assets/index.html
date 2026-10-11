@@ -550,6 +550,12 @@
       font-weight: 600;
     }
 
+    .density-pill.mode-all {
+      background: rgba(76, 201, 240, 0.18);
+      color: var(--torii-indigo);
+      font-weight: 600;
+    }
+
     /* TOP RIGHT CONTROLS DECK */
     .graph-deck-right {
       position: absolute;
@@ -1164,10 +1170,13 @@
           <select class="zen-select" id="graph-ns-filter" onchange="onNamespaceFilterChange()">
             <option value="">All Namespaces</option>
           </select>
-          <div class="density-pill-group" title="Graph Layout Orbit Density">
-            <button class="density-pill" onclick="setForceDensity('dense', this)">Dense</button>
-            <button class="density-pill active" onclick="setForceDensity('zen', this)">Zen</button>
-            <button class="density-pill" onclick="setForceDensity('orbit', this)">Orbit</button>
+          <div class="density-pill-group" id="density-pill-group" title="Graph Layout Orbit Density">
+            <button class="density-pill" data-density="dense" onclick="setForceDensity('dense', this)">Dense</button>
+            <button class="density-pill active" data-density="zen" onclick="setForceDensity('zen', this)">Zen</button>
+            <button class="density-pill" data-density="orbit" onclick="setForceDensity('orbit', this)">Orbit</button>
+          </div>
+          <div class="density-pill-group" id="orphan-pill-group" title="Filter Isolated / Orphan Nodes">
+            <button class="density-pill active" id="btn-toggle-orphans" onclick="toggleOrphanNodes(this)" title="Toggle Isolated Nodes: Connected Only vs Show All">Connected Only</button>
           </div>
         </div>
 
@@ -1409,6 +1418,7 @@
     let filteredNodes = [];
     let filteredLinks = [];
     let currentDensity = 'zen';
+    let orphanFilterMode = 'connected'; // 'connected' | 'all'
     let labelsDisplayMode = 'all'; // 'all' | 'hubs' | 'none'
     let isPhysicsRunning = true;
     let activePreset = 'guard';
@@ -1511,20 +1521,20 @@
       return '#ffd700';
     }
 
-    // --- GENEROUS BEAUTIFUL NODE SIZES ---
+    // --- GENEROUS BEAUTIFUL NODE SIZES (PROMINENT & CALLIGRAPHIC) ---
     function getNodeRadius(d) {
       const deg = d.degree || 0;
       const id = (d.id || '').toLowerCase();
-      const isKeyHub = ['sajjad', 'nixos', 'agentmemory', 'laya', 'niri', 'thinkpad', 'radeon780m'].includes(id);
+      const isKeyHub = ['sajjad', 'nixos', 'agentmemory', 'laya', 'niri', 'thinkpad', 'radeon780m'].includes(id) || deg >= 6;
 
       if (isKeyHub) {
-        return Math.min(54, 38 + deg * 2.2); // Key hubs: 38px - 54px radius (76px - 108px diameter!)
+        return Math.min(58, 42 + Math.max(0, deg - 2) * 2.2); // Key hubs: 42px - 58px radius
       }
-      if (deg > 1) {
-        return Math.min(36, 26 + deg * 1.8); // Connected nodes: 26px - 36px radius (52px - 72px diameter)
+      if (deg > 0) {
+        return Math.min(38, 28 + deg * 1.6); // Connected nodes: 28px - 38px radius
       }
       // Leaf or isolated nodes: solid, generous size with clear Kanji & glow
-      return 23; // 23px radius (46px diameter) — prominent, never microscopic!
+      return 24; // Leaf/orphans: 22px - 26px radius (48px diameter) — prominent, never microscopic
     }
 
     // --- CALLIGRAPHIC KANJI GLYPHS ---
@@ -1547,25 +1557,85 @@
       return '道';
     }
 
-    // --- INITIAL DATA FETCH ---
+    // --- INITIAL DATA FETCH & ORPHAN FILTERING ---
     async function loadGraphData() {
       try {
         const url = activeNamespaceFilter ? `/api/graph?namespace=${encodeURIComponent(activeNamespaceFilter)}` : '/api/graph';
         const res = await fetch(url);
         const data = await res.json();
-        currentGraphData = data;
+        currentGraphData = data || { nodes: [], links: [] };
 
         // Populate Namespace Selects
-        const namespaces = Array.from(new Set(data.nodes.map(n => n.namespace).filter(Boolean))).sort();
+        const namespaces = Array.from(new Set((currentGraphData.nodes || []).map(n => n.namespace).filter(Boolean))).sort();
         updateNamespaceSelects(namespaces);
 
-        document.getElementById('graph-count-nodes').innerText = data.nodes ? data.nodes.length : 0;
-        document.getElementById('graph-count-links').innerText = data.links ? data.links.length : 0;
-
-        initGraphSimulation(data.nodes || [], data.links || []);
+        applyGraphFilters();
       } catch (err) {
         console.error('Graph fetch error:', err);
       }
+    }
+
+    function applyGraphFilters() {
+      if (!currentGraphData || !currentGraphData.nodes) return;
+
+      const allNodes = currentGraphData.nodes || [];
+      const allLinks = currentGraphData.links || [];
+
+      let activeRawNodes = allNodes;
+      let activeRawLinks = allLinks;
+
+      if (orphanFilterMode === 'connected') {
+        const connected = allNodes.filter(n => (n.degree || 0) > 0);
+        if (connected.length > 0) {
+          const connSet = new Set(connected.map(n => n.id));
+          activeRawNodes = connected;
+          activeRawLinks = allLinks.filter(l => {
+            const sId = l.source?.id || l.source;
+            const tId = l.target?.id || l.target;
+            return connSet.has(sId) && connSet.has(tId);
+          });
+        }
+      }
+
+      // Update HUD entity counters
+      const countNodesEl = document.getElementById('graph-count-nodes');
+      const countLinksEl = document.getElementById('graph-count-links');
+      if (countNodesEl) {
+        if (orphanFilterMode === 'connected' && allNodes.length !== activeRawNodes.length) {
+          countNodesEl.innerText = `${activeRawNodes.length} / ${allNodes.length}`;
+          countNodesEl.title = `${activeRawNodes.length} connected entities (${allNodes.length - activeRawNodes.length} isolated hidden)`;
+        } else {
+          countNodesEl.innerText = activeRawNodes.length;
+          countNodesEl.title = `${activeRawNodes.length} entities`;
+        }
+      }
+      if (countLinksEl) {
+        countLinksEl.innerText = activeRawLinks.length;
+      }
+
+      initGraphSimulation(activeRawNodes, activeRawLinks);
+    }
+
+    function toggleOrphanNodes(btn) {
+      const el = btn || document.getElementById('btn-toggle-orphans');
+      if (orphanFilterMode === 'connected') {
+        orphanFilterMode = 'all';
+        if (el) {
+          el.textContent = 'Show All';
+          el.classList.remove('active');
+          el.classList.add('mode-all');
+          el.title = 'Showing all entities (including namespace-clustered orphans). Click for Connected Only.';
+        }
+      } else {
+        orphanFilterMode = 'connected';
+        if (el) {
+          el.textContent = 'Connected Only';
+          el.classList.remove('mode-all');
+          el.classList.add('active');
+          el.title = 'Showing connected nodes only (isolated degree-0 nodes hidden). Click for Show All.';
+        }
+      }
+      applyGraphFilters();
     }
 
     function updateNamespaceSelects(namespaces) {
@@ -1608,7 +1678,7 @@
     window.addEventListener('resize', () => {
       resizeCanvas();
       if (simulation) {
-        simulation.force('center', d3.forceCenter(width / 2, height / 2).strength(0.08));
+        simulation.force('center', d3.forceCenter(width / 2, height / 2).strength(0.18));
       }
       requestRender();
     });
@@ -1627,49 +1697,109 @@
       filteredNodes = nodes;
       filteredLinks = links;
 
-      // Group isolated nodes by namespace so they orbit in harmonious Zen ripples (枯山水)
-      const isolatedNodes = nodes.filter(n => (n.degree || 0) === 0);
-      const nsGroups = Array.from(new Set(isolatedNodes.map(n => n.namespace || 'default')));
-      const nsAngles = new Map(nsGroups.map((ns, idx) => [ns, (idx / nsGroups.length) * Math.PI * 2]));
+      const cx = width / 2;
+      const cy = height / 2;
 
-      // Density parameters
-      let linkDist = 75;
-      let chargeVal = -220;
-      let collideExtra = 18;
+      // Group isolated nodes by namespace into tidy, tight constellation pods
+      const isolatedNodes = nodes.filter(n => (n.degree || 0) === 0);
+      const podTargets = new Map();
+
+      if (isolatedNodes.length > 0) {
+        const nsIsolatedMap = new Map();
+        isolatedNodes.forEach(n => {
+          const ns = n.namespace || 'default';
+          if (!nsIsolatedMap.has(ns)) nsIsolatedMap.set(ns, []);
+          nsIsolatedMap.get(ns).push(n);
+        });
+
+        const nsList = Array.from(nsIsolatedMap.keys()).sort();
+        const nsCount = nsList.length;
+
+        nsList.forEach((ns, nsIdx) => {
+          const groupNodes = nsIsolatedMap.get(ns);
+          // Position pod centroid at compact radius (150px - 180px) from canvas center
+          const podAngle = (nsIdx / Math.max(1, nsCount)) * Math.PI * 2 - Math.PI / 2;
+          const podDist = 160;
+          const podX = cx + Math.cos(podAngle) * podDist;
+          const podY = cy + Math.sin(podAngle) * podDist;
+
+          // Pack nodes tightly inside this pod using golden-ratio phyllotaxis
+          groupNodes.forEach((node, j) => {
+            let tx, ty;
+            if (j === 0) {
+              tx = podX;
+              ty = podY;
+            } else {
+              const rSpread = 16 + Math.sqrt(j) * 11; // 16px to ~55px max radius
+              const theta = j * 2.399963; // Golden angle (~137.5°)
+              tx = podX + Math.cos(theta) * rSpread;
+              ty = podY + Math.sin(theta) * rSpread;
+            }
+            podTargets.set(node.id, { x: tx, y: ty, podX, podY, ns });
+
+            // Seed initial position if not already placed
+            if (typeof node.x !== 'number' || isNaN(node.x)) {
+              node.x = tx + (Math.random() - 0.5) * 4;
+              node.y = ty + (Math.random() - 0.5) * 4;
+            }
+          });
+        });
+      }
+
+      // Seed connected nodes near center if unpositioned
+      nodes.forEach(n => {
+        if ((n.degree || 0) > 0 && (typeof n.x !== 'number' || isNaN(n.x))) {
+          n.x = cx + (Math.random() - 0.5) * 120;
+          n.y = cy + (Math.random() - 0.5) * 120;
+        }
+      });
+
+      // Density parameters (compact, coherent constellation geometry)
+      let linkDist = 58;
+      let chargeVal = -190;
+      let collideExtra = 12;
 
       if (currentDensity === 'dense') {
-        linkDist = 55;
-        chargeVal = -150;
-        collideExtra = 12;
+        linkDist = 48;
+        chargeVal = -140;
+        collideExtra = 8;
       } else if (currentDensity === 'orbit') {
-        linkDist = 110;
-        chargeVal = -320;
-        collideExtra = 26;
+        linkDist = 78;
+        chargeVal = -260;
+        collideExtra = 16;
       }
 
       if (simulation) simulation.stop();
 
       simulation = d3.forceSimulation(nodes)
-        .force('link', d3.forceLink(links).id(d => d.id).distance(d => linkDist + (d.weight ? d.weight * 10 : 0)).strength(0.75))
-        .force('charge', d3.forceManyBody().strength(d => (d.degree > 0 ? chargeVal : -80)))
-        .force('center', d3.forceCenter(width / 2, height / 2).strength(0.08))
-        .force('collide', d3.forceCollide().radius(d => getNodeRadius(d) + collideExtra).iterations(3))
-        // Zen Karesansui constraint: Keep isolated nodes clustered in outer orbit rings instead of repelling into infinity!
-        .force('zenOrbit', (alpha) => {
-          const cx = width / 2;
-          const cy = height / 2;
+        .force('link', d3.forceLink(links).id(d => d.id)
+          .distance(d => linkDist + (d.weight ? Math.min(25, d.weight * 6) : 0))
+          .strength(0.85))
+        .force('charge', d3.forceManyBody()
+          .strength(d => (d.degree > 0 ? chargeVal : -25)))
+        .force('center', d3.forceCenter(cx, cy).strength(0.18))
+        .force('collide', d3.forceCollide()
+          .radius(d => getNodeRadius(d) + collideExtra)
+          .iterations(3));
+
+      // Harmonic namespace constellation pods for isolated nodes
+      if (isolatedNodes.length > 0) {
+        simulation.force('harmonicPods', (alpha) => {
           for (let i = 0; i < isolatedNodes.length; i++) {
             const d = isolatedNodes[i];
-            const baseAngle = nsAngles.get(d.namespace || 'default') || 0;
-            const subOffset = ((i % 12) / 12) * (Math.PI * 2 / Math.max(1, nsGroups.length));
-            const angle = baseAngle + subOffset;
-            const targetRadius = 310 + (i % 3) * 65; // Zen orbital concentric ripples
-            const targetX = cx + Math.cos(angle) * targetRadius;
-            const targetY = cy + Math.sin(angle) * targetRadius;
-            d.vx += (targetX - d.x) * 0.12 * alpha;
-            d.vy += (targetY - d.y) * 0.12 * alpha;
+            const target = podTargets.get(d.id);
+            if (target) {
+              d.vx = (d.vx || 0) + (target.x - d.x) * 0.16 * alpha;
+              d.vy = (d.vy || 0) + (target.y - d.y) * 0.16 * alpha;
+            }
           }
         });
+      }
+
+      // Warm-up tick for immediate organic positioning
+      for (let i = 0; i < 35; i++) {
+        simulation.tick();
+      }
 
       // Simulation tick triggers 60FPS render
       simulation.on('tick', () => {
@@ -1715,10 +1845,11 @@
           })
       );
 
-      // Initial View Fit with gentle delay
+      // Immediate View Fit with pre-warmed positions, followed by smooth stabilization
+      resetGraphView();
       setTimeout(() => {
         resetGraphView();
-      }, 350);
+      }, 300);
     }
 
     // --- FAST SPATIAL LOOKUP ---
@@ -1838,7 +1969,7 @@
       ctx.strokeStyle = 'rgba(212, 175, 55, 0.035)';
       ctx.lineWidth = 1;
       ctx.setLineDash([6, 14]);
-      [310, 375, 440].forEach(r => {
+      [140, 220, 320].forEach(r => {
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.stroke();
@@ -1972,44 +2103,47 @@
         ctx.stroke();
 
         // LAYER 5: Centered Calligraphic Kanji Glyph
-        ctx.font = `700 ${Math.round(r * 0.88)}px 'Noto Serif JP', serif`;
+        ctx.font = `700 ${Math.round(r * 0.86)}px 'Noto Serif JP', 'Noto Sans CJK JP', serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = isHovered || isSelected ? '#ffffff' : color;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = 4;
         ctx.fillText(kanji, d.x, d.y + 1);
+        ctx.shadowBlur = 0;
 
         // LAYER 6: Sleek JetBrains Mono Label Pill below node
         const showLabel = labelsDisplayMode === 'all' || 
           (labelsDisplayMode === 'hubs' && (d.degree > 1 || isHovered || isSelected)) ||
           isHovered || isSelected || matchesSearch;
 
-        if (showLabel && (currentTransform.k > 0.4 || isHovered || isSelected || d.degree > 2)) {
+        if (showLabel && (currentTransform.k > 0.35 || isHovered || isSelected || d.degree > 1)) {
           let labelText = d.id;
-          if (labelText.length > 20) {
-            labelText = labelText.substring(0, 18) + '…';
+          if (labelText.length > 22) {
+            labelText = labelText.substring(0, 20) + '…';
           }
           if (d.degree > 0) {
             labelText += ` [${d.degree}]`;
           }
 
-          ctx.font = `500 11px 'JetBrains Mono', monospace`;
+          ctx.font = `600 12px 'JetBrains Mono', monospace`;
           const textMetrics = ctx.measureText(labelText);
-          const pillW = textMetrics.width + 14;
-          const pillH = 18;
+          const pillW = textMetrics.width + 16;
+          const pillH = 22;
           const pillX = d.x - pillW / 2;
-          const pillY = d.y + r + 8;
+          const pillY = d.y + r + 7;
 
           // Pill Background
           ctx.beginPath();
-          ctx.roundRect(pillX, pillY, pillW, pillH, 4);
-          ctx.fillStyle = 'rgba(5, 7, 11, 0.9)';
+          ctx.roundRect(pillX, pillY, pillW, pillH, 5);
+          ctx.fillStyle = 'rgba(4, 5, 8, 0.92)';
           ctx.fill();
-          ctx.strokeStyle = isHovered || isSelected ? color : 'rgba(255, 255, 255, 0.12)';
+          ctx.strokeStyle = isHovered || isSelected ? color : 'rgba(255, 255, 255, 0.16)';
           ctx.lineWidth = 1;
           ctx.stroke();
 
           // Pill Text
-          ctx.fillStyle = isHovered || isSelected ? '#ffffff' : 'rgba(240, 242, 248, 0.9)';
+          ctx.fillStyle = isHovered || isSelected ? '#ffffff' : 'rgba(245, 247, 250, 0.95)';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(labelText, d.x, pillY + pillH / 2 + 0.5);
@@ -2109,26 +2243,29 @@
     // ========================================================
     function setForceDensity(density, btn) {
       currentDensity = density;
-      document.querySelectorAll('.density-pill').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
+      const group = btn ? btn.closest('.density-pill-group') : document.getElementById('density-pill-group');
+      if (group) {
+        group.querySelectorAll('.density-pill').forEach(p => p.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+      }
 
       if (simulation) {
-        let linkDist = 75;
-        let chargeVal = -220;
-        let collideExtra = 18;
+        let linkDist = 58;
+        let chargeVal = -190;
+        let collideExtra = 12;
 
         if (density === 'dense') {
-          linkDist = 55;
-          chargeVal = -150;
-          collideExtra = 12;
+          linkDist = 48;
+          chargeVal = -140;
+          collideExtra = 8;
         } else if (density === 'orbit') {
-          linkDist = 110;
-          chargeVal = -320;
-          collideExtra = 26;
+          linkDist = 78;
+          chargeVal = -260;
+          collideExtra = 16;
         }
 
-        simulation.force('link').distance(d => linkDist + (d.weight ? d.weight * 10 : 0));
-        simulation.force('charge').strength(d => (d.degree > 0 ? chargeVal : -80));
+        simulation.force('link').distance(d => linkDist + (d.weight ? Math.min(25, d.weight * 6) : 0));
+        simulation.force('charge').strength(d => (d.degree > 0 ? chargeVal : -25));
         simulation.force('collide').radius(d => getNodeRadius(d) + collideExtra);
         simulation.alpha(0.35).restart();
       }
@@ -2171,13 +2308,16 @@
       d3.select(canvas).transition().duration(280).call(zoomBehavior.scaleBy, 0.75);
     }
 
-    // PERFECT FIT VIEW: Generous, prominent framing so nodes are NEVER small!
+    // PERFECT FIT VIEW: Generous, prominent framing prioritizing connected components
     function resetGraphView() {
       if (!simulation || !filteredNodes.length) return;
 
-      // Compute bounding box of all nodes
+      // Prioritize active connected component for camera bounding box
+      const connectedNodes = filteredNodes.filter(d => (d.degree || 0) > 0);
+      const nodesToFit = (connectedNodes.length >= 2) ? connectedNodes : filteredNodes;
+
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-      filteredNodes.forEach(d => {
+      nodesToFit.forEach(d => {
         const r = getNodeRadius(d);
         if (d.x - r < minX) minX = d.x - r;
         if (d.x + r > maxX) maxX = d.x + r;
@@ -2185,17 +2325,25 @@
         if (d.y + r > maxY) maxY = d.y + r;
       });
 
-      const boxWidth = Math.max(100, maxX - minX);
-      const boxHeight = Math.max(100, maxY - minY);
+      if (!isFinite(minX) || !isFinite(maxX) || !isFinite(minY) || !isFinite(maxY)) {
+        minX = width / 2 - 160;
+        maxX = width / 2 + 160;
+        minY = height / 2 - 160;
+        maxY = height / 2 + 160;
+      }
+
+      const boxWidth = Math.max(120, maxX - minX);
+      const boxHeight = Math.max(120, maxY - minY);
       const midX = (minX + maxX) / 2;
       const midY = (minY + maxY) / 2;
 
-      // Generous padding with comfortable minimum scale (never shrink into micro-dots!)
-      const padding = 80;
+      // Generous padding with minimum scale clamp so nodes are never microscopic!
+      const padding = 75;
       const scaleX = (width - padding * 2) / boxWidth;
       const scaleY = (height - padding * 2) / boxHeight;
-      // Clamp scale between 0.75 and 1.35 so dots remain large and prominent!
-      const targetScale = Math.min(Math.max(0.72, Math.min(scaleX, scaleY)), 1.35);
+
+      // Clamp targetScale: at least 0.95 - 1.25 (up to 1.35) so nodes remain large and prominent!
+      const targetScale = Math.min(Math.max(0.95, Math.min(scaleX, scaleY)), 1.35);
 
       const targetX = width / 2 - midX * targetScale;
       const targetY = height / 2 - midY * targetScale;
