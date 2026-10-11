@@ -7,16 +7,15 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     :root {
-      --bg: #090a0f;
-      --surface: #12141c;
-      --surface-border: #1e2230;
+      --bg: #07080c;
+      --surface: #10121a;
+      --surface-elevated: #161924;
+      --surface-border: #1e2232;
       --accent: #6366f1;
-      --accent-glow: rgba(99, 102, 241, 0.25);
-      --text: #f1f5f9;
+      --accent-glow: rgba(99, 102, 241, 0.3);
+      --text: #f8fafc;
       --text-muted: #94a3b8;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
+      --text-dim: #64748b;
       --radius: 10px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,7 +31,7 @@
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--surface-border);
-      padding: 12px 24px;
+      padding: 10px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -89,7 +88,7 @@
       display: none;
       width: 100%;
       height: 100%;
-      overflow: auto;
+      overflow: hidden;
     }
     .tab-content.active {
       display: flex;
@@ -98,11 +97,11 @@
     /* Stats bar */
     .stats-bar {
       display: flex;
-      gap: 16px;
-      padding: 12px 24px;
-      background: rgba(18, 20, 28, 0.6);
+      gap: 18px;
+      padding: 8px 24px;
+      background: rgba(16, 18, 26, 0.75);
       border-bottom: 1px solid var(--surface-border);
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
     }
     .stats-item strong {
@@ -111,12 +110,12 @@
       margin-left: 4px;
     }
 
-    /* Graph View */
+    /* --- Obsidian Graph View --- */
     #graph-container {
       width: 100%;
       height: 100%;
       position: relative;
-      background: radial-gradient(circle at center, #111422 0%, #090a0f 100%);
+      background: radial-gradient(circle at 50% 50%, #0d0f18 0%, #06070a 100%);
     }
     #graph-svg {
       width: 100%;
@@ -124,29 +123,164 @@
       cursor: grab;
     }
     #graph-svg:active { cursor: grabbing; }
-    .graph-panel {
+
+    /* Graph Floating Control Bar */
+    .graph-controls {
       position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 320px;
-      background: rgba(18, 20, 28, 0.85);
+      top: 16px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 18, 26, 0.8);
       backdrop-filter: blur(12px);
       border: 1px solid var(--surface-border);
-      border-radius: var(--radius);
-      padding: 16px;
-      font-size: 0.85rem;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      display: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      z-index: 5;
     }
-    .graph-panel h3 { margin-bottom: 8px; font-size: 1rem; color: #818cf8; }
-    .graph-panel p { margin-bottom: 6px; color: var(--text-muted); word-break: break-all; }
+    .graph-controls input {
+      background: var(--surface-elevated);
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 5px 10px;
+      font-size: 0.82rem;
+      outline: none;
+      width: 160px;
+    }
+    .graph-controls input:focus { border-color: var(--accent); }
+    .graph-controls label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .btn-icon {
+      background: var(--surface-elevated);
+      border: 1px solid var(--surface-border);
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.15s ease;
+    }
+    .btn-icon:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+    /* Graph Inspector Drawer (Right) */
+    .graph-drawer {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      bottom: 16px;
+      width: 380px;
+      background: rgba(16, 18, 26, 0.94);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 5;
+      overflow-y: auto;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.6);
+      animation: slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .drawer-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      word-break: break-word;
+    }
+    .drawer-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+    }
+    .drawer-close:hover { color: var(--text); }
+    .badge-pill {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      width: fit-content;
+    }
+    .drawer-section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-top: 6px;
+      font-weight: 600;
+    }
+    .drawer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .link-chip {
+      background: var(--surface-elevated);
+      border: 1px solid var(--surface-border);
+      color: var(--text-muted);
+      font-size: 0.76rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .link-chip:hover {
+      color: var(--text);
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+    .drawer-fact-card {
+      background: var(--surface-elevated);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.82rem;
+    }
+    .drawer-fact-pred {
+      color: #f472b6;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .drawer-fact-obj {
+      color: var(--text);
+      line-height: 1.4;
+      word-break: break-word;
+    }
 
     /* Core Blocks View */
-    .blocks-container {
-      display: flex;
-      width: 100%;
-      height: 100%;
-    }
+    .blocks-container { display: flex; width: 100%; height: 100%; }
     .blocks-sidebar {
       width: 260px;
       background: var(--surface);
@@ -155,6 +289,7 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      overflow-y: auto;
     }
     .block-nav-item {
       padding: 8px 12px;
@@ -176,11 +311,7 @@
       gap: 16px;
       background: var(--bg);
     }
-    .editor-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+    .editor-header { display: flex; justify-content: space-between; align-items: center; }
     textarea.block-editor {
       flex: 1;
       background: var(--surface);
@@ -213,7 +344,7 @@
       padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
       overflow-y: auto;
     }
     .fact-card {
@@ -225,50 +356,17 @@
       flex-direction: column;
       gap: 8px;
     }
-    .fact-card.superseded {
-      opacity: 0.45;
-      border-color: #332020;
-    }
-    .fact-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-    .fact-triple {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #e2e8f0;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+    .fact-card.superseded { opacity: 0.45; border-color: #332020; }
+    .fact-header { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); }
+    .fact-triple { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; display: flex; gap: 8px; align-items: center; }
     .fact-triple .subj { color: #38bdf8; }
-    .fact-triple .pred { color: #f472b6; font-size: 0.9rem; font-weight: 400; }
+    .fact-triple .pred { color: #f472b6; font-size: 0.85rem; font-weight: 400; }
     .fact-triple .obj { color: #4ade80; }
-    .fact-evidence {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      border-left: 2px solid var(--surface-border);
-      padding-left: 8px;
-      margin-top: 4px;
-    }
+    .fact-evidence { font-size: 0.8rem; color: var(--text-muted); border-left: 2px solid var(--surface-border); padding-left: 8px; margin-top: 4px; }
 
     /* Search View */
-    .search-container {
-      flex: 1;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      max-width: 900px;
-      margin: 0 auto;
-      width: 100%;
-    }
-    .search-box {
-      display: flex;
-      gap: 8px;
-    }
+    .search-container { flex: 1; padding: 24px; display: flex; flex-direction: column; gap: 16px; max-width: 900px; margin: 0 auto; width: 100%; overflow-y: auto; }
+    .search-box { display: flex; gap: 8px; }
     .search-input {
       flex: 1;
       background: var(--surface);
@@ -289,13 +387,7 @@
       flex-direction: column;
       gap: 6px;
     }
-    .search-result .type-badge {
-      font-size: 0.72rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(255,255,255,0.06);
-      width: fit-content;
-    }
+    .search-result .type-badge { font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); width: fit-content; }
   </style>
 </head>
 <body>
@@ -325,11 +417,39 @@
     <!-- Graph Tab -->
     <div class="tab-content active" id="tab-graph">
       <div id="graph-container">
+        <!-- Controls Floating Pill -->
+        <div class="graph-controls">
+          <input type="text" id="graph-search" placeholder="Search node..." oninput="filterGraph()">
+          <label>
+            <input type="checkbox" id="graph-hide-isolated" checked onchange="loadGraph()">
+            Hide isolated
+          </label>
+          <button class="btn-icon" onclick="zoomIn()" title="Zoom In">+</button>
+          <button class="btn-icon" onclick="zoomOut()" title="Zoom Out">−</button>
+          <button class="btn-icon" onclick="resetZoom()" title="Reset View">⊙</button>
+        </div>
+
         <svg id="graph-svg"></svg>
-        <div class="graph-panel" id="graph-panel">
-          <h3 id="panel-title">Node Info</h3>
-          <p><strong>Type:</strong> <span id="panel-type"></span></p>
-          <p><strong>Namespace:</strong> <span id="panel-ns"></span></p>
+
+        <!-- Obsidian-Style Inspector Drawer -->
+        <div class="graph-drawer" id="graph-drawer">
+          <div class="drawer-header">
+            <div>
+              <div class="drawer-title" id="drawer-title">Entity Name</div>
+              <div class="badge-pill" id="drawer-badge" style="margin-top:6px;">Concept</div>
+            </div>
+            <button class="drawer-close" onclick="closeDrawer()">✕</button>
+          </div>
+
+          <div>
+            <div class="drawer-section-title">Connections (<span id="drawer-conn-count">0</span>)</div>
+            <div class="drawer-links" id="drawer-links" style="margin-top:6px;"></div>
+          </div>
+
+          <div id="drawer-facts-section" style="display:none;">
+            <div class="drawer-section-title">Related Facts & Assertions</div>
+            <div id="drawer-facts-list" style="margin-top:6px; display:flex; flex-direction:column; gap:8px;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -368,6 +488,10 @@
   <script>
     let activeBlockLabel = null;
     let allBlocks = [];
+    let graphData = { nodes: [], links: [] };
+    let simulation = null;
+    let svgZoom = null;
+    let mainSvgGroup = null;
 
     function switchTab(name) {
       document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -393,72 +517,142 @@
       } catch (e) { console.error(e); }
     }
 
-    /* --- Graph Rendering --- */
-    let simulation = null;
+    /* --- Obsidian Knowledge Graph --- */
+    function getNodeColor(d) {
+      const ns = (d.namespace || '').toLowerCase();
+      const type = (d.type || '').toLowerCase();
+      if (ns.includes('system') || ns.includes('infra')) return '#38bdf8'; // Sky
+      if (ns.includes('ai') || type.includes('tool')) return '#a855f7';     // Purple
+      if (type === 'subject') return '#818cf8';                            // Indigo
+      if (type === 'section') return '#f472b6';                            // Rose
+      if (ns.includes('user') || ns.includes('human')) return '#10b981';   // Emerald
+      if (ns.includes('forex')) return '#14b8a6';                          // Teal
+      if (ns.includes('ecommerce')) return '#f59e0b';                      // Amber
+      return '#6366f1';                                                    // Default Accent
+    }
+
+    function getNodeRadius(d) {
+      const degree = d.degree || 0;
+      return Math.max(4.5, Math.min(18, 4.5 + Math.sqrt(degree) * 2.8));
+    }
+
+    function getTruncatedLabel(label) {
+      if (!label) return '';
+      return label.length > 16 ? label.slice(0, 14) + '…' : label;
+    }
+
     async function loadGraph() {
+      const container = document.getElementById("graph-container");
+      const width = container.clientWidth || 1000;
+      const height = container.clientHeight || 700;
+
       const svg = d3.select("#graph-svg");
       svg.selectAll("*").remove();
 
-      const container = document.getElementById("graph-container");
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+      // SVG Glow Filter
+      const defs = svg.append("defs");
+      const filter = defs.append("filter").attr("id", "neon-glow").attr("x", "-50%").attr("y", "-50%").attr("width", "200%").attr("height", "200%");
+      filter.append("feGaussianBlur").attr("stdDeviation", "2.5").attr("result", "coloredBlur");
+      const feMerge = filter.append("feMerge");
+      feMerge.append("feMergeNode").attr("in", "coloredBlur");
+      feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
-      const g = svg.append("g");
-      const zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (e) => g.attr("transform", e.transform));
-      svg.call(zoom);
+      mainSvgGroup = svg.append("g");
+      svgZoom = d3.zoom().scaleExtent([0.15, 5]).on("zoom", (e) => mainSvgGroup.attr("transform", e.transform));
+      svg.call(svgZoom);
 
       const res = await fetch('/api/graph');
-      const data = await res.json();
-      if (!data.nodes || data.nodes.length === 0) return;
+      const rawData = await res.json();
+      if (!rawData.nodes || rawData.nodes.length === 0) return;
 
-      simulation = d3.forceSimulation(data.nodes)
-        .force("link", d3.forceLink(data.links).id(d => d.id).distance(75))
-        .force("charge", d3.forceManyBody().strength(-140))
+      const hideIsolated = document.getElementById('graph-hide-isolated').checked;
+      let nodes = rawData.nodes;
+      let links = rawData.links;
+
+      if (hideIsolated) {
+        nodes = nodes.filter(n => (n.degree || 0) > 0);
+        const nodeSet = new Set(nodes.map(n => n.id));
+        links = links.filter(l => nodeSet.has(l.source) && nodeSet.has(l.target));
+      }
+
+      graphData = { nodes, links };
+
+      simulation = d3.forceSimulation(nodes)
+        .force("link", d3.forceLink(links).id(d => d.id).distance(80).strength(0.4))
+        .force("charge", d3.forceManyBody().strength(d => -80 - (d.degree || 0) * 15))
         .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collision", d3.forceCollide().radius(22));
+        .force("collision", d3.forceCollide().radius(d => getNodeRadius(d) + 12));
 
-      const link = g.append("g")
+      // Edges
+      const link = mainSvgGroup.append("g")
         .selectAll("line")
-        .data(data.links)
+        .data(links)
         .join("line")
-        .attr("stroke", "#2a3045")
-        .attr("stroke-opacity", 0.6)
-        .attr("stroke-width", d => Math.max(1, (d.weight || 1) * 1.5));
+        .attr("stroke", "rgba(148, 163, 184, 0.16)")
+        .attr("stroke-width", d => Math.max(1, (d.weight || 1) * 1.2));
 
-      const node = g.append("g")
+      // Node Groups
+      const node = mainSvgGroup.append("g")
         .selectAll("g")
-        .data(data.nodes)
+        .data(nodes)
         .join("g")
+        .attr("class", "graph-node-group")
         .call(d3.drag()
           .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
           .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
           .on("end", (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
         );
 
+      // Circles
       node.append("circle")
-        .attr("r", d => d.type === 'concept' ? 8 : (d.type === 'subject' ? 7 : 5))
-        .attr("fill", d => {
-          if (d.type === 'concept') return "#818cf8";
-          if (d.type === 'subject') return "#38bdf8";
-          if (d.type === 'section') return "#f472b6";
-          return "#4ade80";
-        })
-        .attr("stroke", "#12141c")
-        .attr("stroke-width", 2);
+        .attr("r", d => getNodeRadius(d))
+        .attr("fill", d => getNodeColor(d))
+        .attr("stroke", "#07080c")
+        .attr("stroke-width", 1.8)
+        .attr("filter", d => (d.degree || 0) >= 4 ? "url(#neon-glow)" : null);
 
+      // Clean Labels: only show for degree >= 2 by default
       node.append("text")
-        .text(d => d.label)
-        .attr("x", 10)
+        .text(d => getTruncatedLabel(d.label))
+        .attr("x", d => getNodeRadius(d) + 4)
         .attr("y", 3)
-        .attr("fill", "#94a3b8")
-        .attr("font-size", "10px")
-        .attr("font-family", "sans-serif");
+        .attr("fill", "#cbd5e1")
+        .attr("font-size", "9.5px")
+        .attr("font-weight", d => (d.degree || 0) >= 4 ? "600" : "400")
+        .attr("style", d => (d.degree || 0) < 2 ? "display: none;" : "")
+        .attr("pointer-events", "none");
 
+      // Hover Interaction: Highlight neighborhood
+      node.on("mouseenter", (e, d) => {
+        const neighborSet = new Set([d.id]);
+        links.forEach(l => {
+          if (l.source.id === d.id) neighborSet.add(l.target.id);
+          if (l.target.id === d.id) neighborSet.add(l.source.id);
+        });
+
+        node.style("opacity", n => neighborSet.has(n.id) ? 1 : 0.15);
+        link.style("stroke-opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 0.9 : 0.05)
+            .style("stroke", l => (l.source.id === d.id || l.target.id === d.id) ? "#818cf8" : "rgba(148, 163, 184, 0.16)")
+            .style("stroke-width", l => (l.source.id === d.id || l.target.id === d.id) ? 2 : 1);
+
+        // Show text label on hover
+        d3.select(e.currentTarget).select("text").style("display", "block").attr("fill", "#ffffff");
+      });
+
+      node.on("mouseleave", (e, d) => {
+        node.style("opacity", 1);
+        link.style("stroke-opacity", 0.6)
+            .style("stroke", "rgba(148, 163, 184, 0.16)")
+            .style("stroke-width", d => Math.max(1, (d.weight || 1) * 1.2));
+
+        if ((d.degree || 0) < 2) {
+          d3.select(e.currentTarget).select("text").style("display", "none");
+        }
+      });
+
+      // Click: Open Obsidian-style detail drawer
       node.on("click", (e, d) => {
-        document.getElementById('graph-panel').style.display = 'block';
-        document.getElementById('panel-title').textContent = d.label;
-        document.getElementById('panel-type').textContent = d.type;
-        document.getElementById('panel-ns').textContent = d.namespace;
+        openDrawer(d);
       });
 
       simulation.on("tick", () => {
@@ -469,6 +663,84 @@
           .attr("y2", d => d.target.y);
         node.attr("transform", d => `translate(${d.x},${d.y})`);
       });
+    }
+
+    function openDrawer(d) {
+      const drawer = document.getElementById("graph-drawer");
+      drawer.style.display = "flex";
+
+      document.getElementById("drawer-title").textContent = d.id;
+      document.getElementById("drawer-badge").textContent = `${d.type || 'concept'} • ${d.namespace || 'default'}`;
+
+      // Calculate neighbors
+      const neighbors = [];
+      graphData.links.forEach(l => {
+        if (l.source.id === d.id) neighbors.push({ id: l.target.id, rel: l.relation });
+        if (l.target.id === d.id) neighbors.push({ id: l.source.id, rel: l.relation });
+      });
+
+      document.getElementById("drawer-conn-count").textContent = neighbors.length;
+      const linksContainer = document.getElementById("drawer-links");
+      linksContainer.innerHTML = '';
+      if (neighbors.length === 0) {
+        linksContainer.innerHTML = '<span style="color:var(--text-dim);font-size:0.8rem;">No direct connections</span>';
+      } else {
+        neighbors.forEach(n => {
+          const chip = document.createElement("span");
+          chip.className = "link-chip";
+          chip.textContent = `${n.rel ? n.rel + ' → ' : ''}${n.id}`;
+          chip.onclick = () => {
+            const target = graphData.nodes.find(node => node.id === n.id);
+            if (target) openDrawer(target);
+          };
+          linksContainer.appendChild(chip);
+        });
+      }
+
+      // Render Facts section
+      const factsSection = document.getElementById("drawer-facts-section");
+      const factsList = document.getElementById("drawer-facts-list");
+      factsList.innerHTML = '';
+      if (d.facts && d.facts.length > 0) {
+        factsSection.style.display = "block";
+        d.facts.forEach(f => {
+          const card = document.createElement("div");
+          card.className = "drawer-fact-card";
+          card.innerHTML = `
+            <div class="drawer-fact-pred">${f.predicate || 'asserts'}</div>
+            <div class="drawer-fact-obj">${f.object}</div>
+          `;
+          factsList.appendChild(card);
+        });
+      } else {
+        factsSection.style.display = "none";
+      }
+    }
+
+    function closeDrawer() {
+      document.getElementById("graph-drawer").style.display = "none";
+    }
+
+    function filterGraph() {
+      const q = document.getElementById("graph-search").value.toLowerCase().trim();
+      if (!mainSvgGroup) return;
+      if (!q) {
+        mainSvgGroup.selectAll(".graph-node-group").style("opacity", 1);
+        return;
+      }
+      mainSvgGroup.selectAll(".graph-node-group").style("opacity", d => {
+        return (d.id.toLowerCase().includes(q) || d.label.toLowerCase().includes(q)) ? 1 : 0.1;
+      });
+    }
+
+    function zoomIn() {
+      d3.select("#graph-svg").transition().duration(250).call(svgZoom.scaleBy, 1.35);
+    }
+    function zoomOut() {
+      d3.select("#graph-svg").transition().duration(250).call(svgZoom.scaleBy, 0.75);
+    }
+    function resetZoom() {
+      d3.select("#graph-svg").transition().duration(350).call(svgZoom.transform, d3.zoomIdentity);
     }
 
     /* --- Core Blocks --- */
@@ -569,7 +841,7 @@
       });
     }
 
-    // Init
+    // Initialize
     fetchStats();
     loadGraph();
   </script>

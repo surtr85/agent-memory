@@ -250,12 +250,20 @@ func (s *Server) handleFacts(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	type GraphNode struct {
-		ID        string `json:"id"`
-		Label     string `json:"label"`
-		Type      string `json:"type"` // 'entity', 'fact_subj', 'fact_obj'
-		Namespace string `json:"namespace"`
+	type GraphFact struct {
+		Predicate string `json:"predicate"`
+		Object    string `json:"object"`
 	}
+
+	type GraphNode struct {
+		ID        string      `json:"id"`
+		Label     string      `json:"label"`
+		Type      string      `json:"type"` // 'concept', 'section', 'subject', 'tool'
+		Namespace string      `json:"namespace"`
+		Degree    int         `json:"degree"`
+		Facts     []GraphFact `json:"facts,omitempty"`
+	}
+
 	type GraphEdge struct {
 		Source   string  `json:"source"`
 		Target   string  `json:"target"`
@@ -264,7 +272,27 @@ func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
 	}
 
 	nodeMap := make(map[string]GraphNode)
+	nodeFacts := make(map[string][]GraphFact)
+	degreeMap := make(map[string]int)
 	var edges []GraphEdge
+
+	cleanLabel := func(raw string) string {
+		trimmed := strings.TrimSpace(raw)
+		trimmed = strings.TrimLeft(trimmed, "# \t")
+		// Strip leading numeric numbering like "1. ", "2.4 "
+		for len(trimmed) > 3 && (trimmed[0] >= '0' && trimmed[0] <= '9') && (trimmed[1] == '.' || trimmed[2] == '.') {
+			parts := strings.SplitN(trimmed, " ", 2)
+			if len(parts) == 2 {
+				trimmed = strings.TrimSpace(parts[1])
+			} else {
+				break
+			}
+		}
+		if len(trimmed) > 40 {
+			trimmed = trimmed[:37] + "..."
+		}
+		return trimmed
+	}
 
 	// 1. Load entities
 	eRows, err := s.db.Query(`SELECT name, entity_type, namespace FROM entities LIMIT 300`)
@@ -272,9 +300,10 @@ func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
 		for eRows.Next() {
 			var name, eType, ns string
 			if err := eRows.Scan(&name, &eType, &ns); err == nil {
+				clean := cleanLabel(name)
 				nodeMap[name] = GraphNode{
 					ID:        name,
-					Label:     name,
+					Label:     clean,
 					Type:      eType,
 					Namespace: ns,
 				}
@@ -291,10 +320,10 @@ func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
 			var w float64
 			if err := rRows.Scan(&src, &tgt, &rel, &w); err == nil {
 				if _, ok := nodeMap[src]; !ok {
-					nodeMap[src] = GraphNode{ID: src, Label: src, Type: "concept", Namespace: "default"}
+					nodeMap[src] = GraphNode{ID: src, Label: cleanLabel(src), Type: "concept", Namespace: "default"}
 				}
 				if _, ok := nodeMap[tgt]; !ok {
-					nodeMap[tgt] = GraphNode{ID: tgt, Label: tgt, Type: "concept", Namespace: "default"}
+					nodeMap[tgt] = GraphNode{ID: tgt, Label: cleanLabel(tgt), Type: "concept", Namespace: "default"}
 				}
 				edges = append(edges, GraphEdge{
 					Source:   src,
@@ -302,37 +331,62 @@ func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
 					Relation: rel,
 					Weight:   w,
 				})
+				degreeMap[src]++
+				degreeMap[tgt]++
 			}
 		}
 		rRows.Close()
 	}
 
-	// 3. Load active facts as graph triples (subject -> predicate -> object)
-	fRows, err := s.db.Query(`SELECT subject, predicate, object, namespace, salience FROM facts WHERE valid_until IS NULL LIMIT 200`)
+	// 3. Load active facts:
+	// If object is short (<= 35 chars) -> it's an entity node in graph.
+	// If object is long (> 35 chars / paragraph) -> it's a detail attribute of the subject, NOT a standalone node!
+	fRows, err := s.db.Query(`SELECT subject, predicate, object, namespace, salience FROM facts WHERE valid_until IS NULL LIMIT 250`)
 	if err == nil {
 		for fRows.Next() {
 			var subj, pred, obj, ns string
 			var salience float64
 			if err := fRows.Scan(&subj, &pred, &obj, &ns, &salience); err == nil {
+				cleanSubj := cleanLabel(subj)
 				if _, ok := nodeMap[subj]; !ok {
-					nodeMap[subj] = GraphNode{ID: subj, Label: subj, Type: "subject", Namespace: ns}
+					nodeMap[subj] = GraphNode{ID: subj, Label: cleanSubj, Type: "subject", Namespace: ns}
 				}
-				if _, ok := nodeMap[obj]; !ok {
-					nodeMap[obj] = GraphNode{ID: obj, Label: obj, Type: "object", Namespace: ns}
+
+				trimmedObj := strings.TrimSpace(obj)
+				isLongText := len(trimmedObj) > 35 || strings.Contains(trimmedObj, "\n") || strings.Contains(trimmedObj, ". ")
+
+				if isLongText {
+					// Store as detailed fact metadata on subject node
+					nodeFacts[subj] = append(nodeFacts[subj], GraphFact{
+						Predicate: pred,
+						Object:    trimmedObj,
+					})
+				} else {
+					// Short object: valid graph entity
+					cleanObj := cleanLabel(trimmedObj)
+					if _, ok := nodeMap[trimmedObj]; !ok {
+						nodeMap[trimmedObj] = GraphNode{ID: trimmedObj, Label: cleanObj, Type: "concept", Namespace: ns}
+					}
+					edges = append(edges, GraphEdge{
+						Source:   subj,
+						Target:   trimmedObj,
+						Relation: pred,
+						Weight:   salience,
+					})
+					degreeMap[subj]++
+					degreeMap[trimmedObj]++
 				}
-				edges = append(edges, GraphEdge{
-					Source:   subj,
-					Target:   obj,
-					Relation: pred,
-					Weight:   salience,
-				})
 			}
 		}
 		fRows.Close()
 	}
 
 	var nodes []GraphNode
-	for _, n := range nodeMap {
+	for id, n := range nodeMap {
+		n.Degree = degreeMap[id]
+		if facts, ok := nodeFacts[id]; ok {
+			n.Facts = facts
+		}
 		nodes = append(nodes, n)
 	}
 
