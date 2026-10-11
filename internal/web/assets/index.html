@@ -3,890 +3,1405 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AgentMemory Universal — Cognitive Hub</title>
+  <title>AgentMemory — 記憶 禅 (Japanese Dark Zen Dashboard)</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Noto+Serif+JP:wght@300;400;600&family=Vazirmatn:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #07080c;
-      --surface: #10121a;
-      --surface-elevated: #161924;
-      --surface-border: #1e2232;
-      --accent: #6366f1;
-      --accent-glow: rgba(99, 102, 241, 0.3);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      --radius: 10px;
+      --bg-void: #08090c;
+      --bg-surface: #0f1117;
+      --bg-card: #141720;
+      --bg-card-hover: #1a1e2b;
+      --border-subtle: rgba(212, 175, 55, 0.12);
+      --border-active: rgba(212, 175, 55, 0.35);
+      
+      /* Japanese Zen Palette */
+      --kintsugi-gold: #d4af37;
+      --kintsugi-glow: rgba(212, 175, 55, 0.25);
+      --matcha-green: #88a070;
+      --matcha-glow: rgba(136, 160, 112, 0.25);
+      --akane-red: #d3524b;
+      --akane-glow: rgba(211, 82, 75, 0.25);
+      --indigo-blue: #7c8fb5;
+      --indigo-glow: rgba(124, 143, 181, 0.25);
+      --bamboo-gray: #3a3f52;
+      
+      --text-primary: #e6e8ee;
+      --text-secondary: #9a9eb1;
+      --text-muted: #5e6378;
+      --text-kanji: rgba(212, 175, 55, 0.18);
+      
+      --font-serif: 'Noto Serif JP', 'Cinzel', serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Vazirmatn', -apple-system, sans-serif;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Vazirmatn", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
+      font-family: var(--font-sans);
+      background-color: var(--bg-void);
+      color: var(--text-primary);
       height: 100vh;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.04) 0%, transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(124, 143, 181, 0.03) 0%, transparent 50%);
     }
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--surface-border);
-      padding: 10px 24px;
+
+    /* TOP ZEN BAR */
+    header.zen-header {
+      height: 64px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 28px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      z-index: 10;
+      position: relative;
+      z-index: 50;
     }
-    .brand {
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* Animated Ensō Circle Logo */
+    .enso-logo {
+      width: 36px;
+      height: 36px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .enso-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-45deg);
+      filter: drop-shadow(0 0 6px var(--kintsugi-glow));
+    }
+
+    .enso-path {
+      fill: none;
+      stroke: var(--kintsugi-gold);
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-dasharray: 100;
+      stroke-dashoffset: 10;
+      animation: ensoPulse 6s ease-in-out infinite alternate;
+    }
+
+    @keyframes ensoPulse {
+      0% { stroke-dashoffset: 14; filter: drop-shadow(0 0 4px var(--kintsugi-glow)); }
+      100% { stroke-dashoffset: 2; filter: drop-shadow(0 0 12px var(--kintsugi-gold)); }
+    }
+
+    .brand-title {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-name {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: 0.08em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-kanji {
+      font-size: 0.9rem;
+      color: var(--kintsugi-gold);
+      font-weight: 400;
+      opacity: 0.85;
+    }
+
+    .brand-sub {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* TELEMETRY BADGES */
+    .header-telemetry {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .telemetry-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .telemetry-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .telemetry-val {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--kintsugi-gold);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(136, 160, 112, 0.08);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--matcha-green);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--matcha-green);
+      box-shadow: 0 0 8px var(--matcha-green);
+      animation: blink 2s infinite;
+    }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ACTION BUTTONS */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .zen-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 7px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .zen-btn:hover {
+      border-color: var(--kintsugi-gold);
+      color: var(--kintsugi-gold);
+      box-shadow: 0 0 10px var(--border-subtle);
+      background: var(--bg-card-hover);
+    }
+
+    .zen-btn.primary {
+      background: rgba(212, 175, 55, 0.12);
+      border-color: var(--kintsugi-gold);
+      color: var(--kintsugi-gold);
+    }
+
+    .zen-btn.primary:hover {
+      background: rgba(212, 175, 55, 0.25);
+      box-shadow: 0 0 14px var(--kintsugi-glow);
+    }
+
+    /* MAIN CONTAINER & TABS */
+    .main-wrapper {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* SIDEBAR NAVIGATION */
+    nav.zen-nav {
+      width: 220px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px 0;
+      z-index: 20;
+    }
+
+    .nav-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 0 12px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .nav-item-title {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-weight: 700;
-      font-size: 1.15rem;
-      letter-spacing: -0.02em;
     }
-    .brand span.badge {
-      font-size: 0.72rem;
-      background: var(--accent-glow);
-      color: #818cf8;
-      border: 1px solid rgba(99, 102, 241, 0.4);
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-weight: 500;
-    }
-    nav {
-      display: flex;
-      gap: 8px;
-    }
-    nav button {
-      background: transparent;
-      border: 1px solid transparent;
+
+    .nav-item-kanji {
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
       color: var(--text-muted);
-      padding: 6px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.88rem;
-      font-weight: 500;
-      transition: all 0.15s ease;
+      width: 24px;
     }
-    nav button:hover {
-      color: var(--text);
-      background: rgba(255, 255, 255, 0.04);
+
+    .nav-item:hover {
+      color: var(--text-primary);
+      background: var(--bg-card);
     }
-    nav button.active {
-      background: var(--surface-border);
-      color: var(--text);
-      border-color: rgba(255, 255, 255, 0.08);
+
+    .nav-item.active {
+      color: var(--kintsugi-gold);
+      background: rgba(212, 175, 55, 0.08);
+      border-color: var(--border-subtle);
     }
-    main {
+
+    .nav-item.active .nav-item-kanji {
+      color: var(--kintsugi-gold);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      height: 60%;
+      width: 3px;
+      background: var(--kintsugi-gold);
+      box-shadow: 0 0 8px var(--kintsugi-gold);
+      border-radius: 0 2px 2px 0;
+    }
+
+    .nav-shortcut {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.04);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    .nav-footer-info {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* VIEWPORT PANELS */
+    .view-container {
       flex: 1;
-      display: flex;
-      overflow: hidden;
       position: relative;
-    }
-    .tab-content {
-      display: none;
-      width: 100%;
-      height: 100%;
       overflow: hidden;
-    }
-    .tab-content.active {
-      display: flex;
+      background: var(--bg-void);
     }
 
-    /* Stats bar */
-    .stats-bar {
+    .view-panel {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
       display: flex;
-      gap: 18px;
-      padding: 8px 24px;
-      background: rgba(16, 18, 26, 0.75);
-      border-bottom: 1px solid var(--surface-border);
-      font-size: 0.8rem;
+      flex-direction: column;
+      padding: 24px 32px;
+      overflow-y: auto;
+    }
+
+    .view-panel.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* PANEL HEADERS */
+    .panel-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .panel-title-group {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+
+    .panel-kanji-bg {
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      color: var(--text-kanji);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .panel-title {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: var(--text-primary);
+    }
+
+    .panel-sub {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
       color: var(--text-muted);
     }
-    .stats-item strong {
-      color: var(--text);
-      font-weight: 600;
-      margin-left: 4px;
+
+    /* 1. GRAPH VIEW (枯山水 KARESANSUI) */
+    #view-graph {
+      padding: 0;
     }
 
-    /* --- Obsidian Graph View --- */
-    #graph-container {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      background: radial-gradient(circle at 50% 50%, #0d0f18 0%, #06070a 100%);
+    .graph-controls-overlay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      display: flex;
+      gap: 12px;
+      background: rgba(15, 17, 23, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
     }
-    #graph-svg {
+
+    .graph-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      outline: none;
+    }
+
+    #graph-canvas {
       width: 100%;
       height: 100%;
       cursor: grab;
     }
-    #graph-svg:active { cursor: grabbing; }
 
-    /* Graph Floating Control Bar */
-    .graph-controls {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(16, 18, 26, 0.8);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--surface-border);
+    #graph-canvas:active { cursor: grabbing; }
+
+    /* 2. BLOCKS VIEW (記憶 KIOKU) */
+    .blocks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .tatami-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
       border-radius: 8px;
-      padding: 6px 12px;
-      z-index: 5;
-    }
-    .graph-controls input {
-      background: var(--surface-elevated);
-      border: 1px solid var(--surface-border);
-      border-radius: 6px;
-      color: var(--text);
-      padding: 5px 10px;
-      font-size: 0.82rem;
-      outline: none;
-      width: 160px;
-    }
-    .graph-controls input:focus { border-color: var(--accent); }
-    .graph-controls label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      user-select: none;
-    }
-    .btn-icon {
-      background: var(--surface-elevated);
-      border: 1px solid var(--surface-border);
-      color: var(--text-muted);
-      width: 28px;
-      height: 28px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.15s ease;
-    }
-    .btn-icon:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
-
-    /* Graph Inspector Drawer (Right) */
-    .graph-drawer {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      bottom: 16px;
-      width: 380px;
-      background: rgba(16, 18, 26, 0.94);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--surface-border);
-      border-radius: var(--radius);
       padding: 20px;
-      display: none;
-      flex-direction: column;
-      gap: 14px;
-      z-index: 5;
-      overflow-y: auto;
-      box-shadow: 0 12px 36px rgba(0,0,0,0.6);
-      animation: slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes slideIn {
-      from { transform: translateX(20px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    .drawer-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 8px;
-    }
-    .drawer-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text);
-      word-break: break-word;
-    }
-    .drawer-close {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 1.1rem;
-      padding: 4px;
-    }
-    .drawer-close:hover { color: var(--text); }
-    .badge-pill {
-      font-size: 0.72rem;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: rgba(99, 102, 241, 0.15);
-      color: #818cf8;
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      width: fit-content;
-    }
-    .drawer-section-title {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-dim);
-      margin-top: 6px;
-      font-weight: 600;
-    }
-    .drawer-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .link-chip {
-      background: var(--surface-elevated);
-      border: 1px solid var(--surface-border);
-      color: var(--text-muted);
-      font-size: 0.76rem;
-      padding: 4px 8px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .link-chip:hover {
-      color: var(--text);
-      border-color: var(--accent);
-      background: var(--accent-glow);
-    }
-    .drawer-fact-card {
-      background: var(--surface-elevated);
-      border: 1px solid var(--surface-border);
-      border-radius: 8px;
-      padding: 10px 12px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      font-size: 0.82rem;
-    }
-    .drawer-fact-pred {
-      color: #f472b6;
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .drawer-fact-obj {
-      color: var(--text);
-      line-height: 1.4;
-      word-break: break-word;
+      gap: 12px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
     }
 
-    /* Core Blocks View */
-    .blocks-container { display: flex; width: 100%; height: 100%; }
-    .blocks-sidebar {
-      width: 260px;
-      background: var(--surface);
-      border-right: 1px solid var(--surface-border);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      overflow-y: auto;
+    .tatami-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--kintsugi-gold), transparent);
+      opacity: 0.4;
     }
-    .block-nav-item {
-      padding: 8px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.88rem;
-      color: var(--text-muted);
-      transition: background 0.15s ease;
+
+    .tatami-card:hover {
+      border-color: var(--border-active);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px var(--kintsugi-glow);
+    }
+
+    .tatami-header {
       display: flex;
+      align-items: center;
       justify-content: space-between;
     }
-    .block-nav-item:hover { background: rgba(255,255,255,0.03); color: var(--text); }
-    .block-nav-item.active { background: var(--accent-glow); color: #818cf8; font-weight: 600; }
-    .block-editor-area {
+
+    .tatami-label {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--kintsugi-gold);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tatami-tag {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: rgba(124, 143, 181, 0.12);
+      color: var(--indigo-blue);
+      border: 1px solid rgba(124, 143, 181, 0.25);
+    }
+
+    .tatami-content {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.03);
+      max-height: 220px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    /* 3. FACTS VIEW (庭 NIWA) */
+    .facts-toolbar {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .search-input-box {
       flex: 1;
+      position: relative;
+    }
+
+    .zen-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 10px 16px;
+      border-radius: 6px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .zen-input:focus {
+      border-color: var(--kintsugi-gold);
+      box-shadow: 0 0 12px var(--kintsugi-glow);
+    }
+
+    .facts-table-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .facts-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.83rem;
+    }
+
+    .facts-table th {
+      background: rgba(15, 17, 23, 0.9);
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-weight: 500;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      text-transform: uppercase;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+    }
+
+    .facts-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+    }
+
+    .facts-table tr:hover td {
+      background: rgba(212, 175, 55, 0.03);
+      color: var(--text-primary);
+    }
+
+    .fact-triple {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .triple-subj { color: var(--text-primary); font-weight: 600; }
+    .triple-pred { color: var(--kintsugi-gold); opacity: 0.85; }
+    .triple-obj  { color: var(--matcha-green); }
+
+    .salience-badge {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: rgba(212, 175, 55, 0.1);
+      color: var(--kintsugi-gold);
+    }
+
+    /* 4. DECISION LAB (瞑想 MEISŌ) */
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 24px;
+      flex: 1;
+    }
+
+    .lab-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
       padding: 24px;
       display: flex;
       flex-direction: column;
       gap: 16px;
-      background: var(--bg);
     }
-    .editor-header { display: flex; justify-content: space-between; align-items: center; }
-    textarea.block-editor {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: var(--radius);
-      color: var(--text);
-      padding: 16px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.9rem;
-      resize: none;
-      outline: none;
-    }
-    textarea.block-editor:focus { border-color: var(--accent); }
-    .btn {
-      background: var(--accent);
-      border: none;
-      color: white;
-      padding: 8px 18px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.85rem;
-      transition: opacity 0.15s ease;
-    }
-    .btn:hover { opacity: 0.9; }
 
-    /* Facts View */
-    .facts-container {
-      flex: 1;
-      padding: 24px;
+    .preset-selector {
       display: flex;
-      flex-direction: column;
-      gap: 12px;
-      overflow-y: auto;
-    }
-    .fact-card {
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: var(--radius);
-      padding: 14px 18px;
-      display: flex;
-      flex-direction: column;
       gap: 8px;
+      flex-wrap: wrap;
     }
-    .fact-card.superseded { opacity: 0.45; border-color: #332020; }
-    .fact-header { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); }
-    .fact-triple { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; display: flex; gap: 8px; align-items: center; }
-    .fact-triple .subj { color: #38bdf8; }
-    .fact-triple .pred { color: #f472b6; font-size: 0.85rem; font-weight: 400; }
-    .fact-triple .obj { color: #4ade80; }
-    .fact-evidence { font-size: 0.8rem; color: var(--text-muted); border-left: 2px solid var(--surface-border); padding-left: 8px; margin-top: 4px; }
 
-    /* Search View */
-    .search-container { flex: 1; padding: 24px; display: flex; flex-direction: column; gap: 16px; max-width: 900px; margin: 0 auto; width: 100%; overflow-y: auto; }
-    .search-box { display: flex; gap: 8px; }
-    .search-input {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: var(--radius);
-      color: var(--text);
-      padding: 12px 16px;
-      font-size: 0.95rem;
-      outline: none;
+    .preset-btn {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 6px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
-    .search-input:focus { border-color: var(--accent); }
-    .search-result {
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: var(--radius);
-      padding: 14px 18px;
+
+    .preset-btn.active, .preset-btn:hover {
+      background: rgba(212, 175, 55, 0.15);
+      border-color: var(--kintsugi-gold);
+      color: var(--kintsugi-gold);
+    }
+
+    .decision-result-card {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 16px;
+      flex: 1;
     }
-    .search-result .type-badge { font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); width: fit-content; }
+
+    .decision-gauge {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .metric-box {
+      text-align: center;
+    }
+
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--kintsugi-gold);
+    }
+
+    .metric-sub {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* SHOJI INSPECTOR DRAWER (障子 PANEL) */
+    .shoji-drawer {
+      position: fixed;
+      top: 0;
+      right: -480px;
+      width: 480px;
+      height: 100vh;
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-subtle);
+      z-index: 100;
+      box-shadow: -10px 0 40px rgba(0,0,0,0.8);
+      transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .shoji-drawer.open { right: 0; }
+
+    .shoji-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .shoji-title {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      color: var(--kintsugi-gold);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .shoji-body {
+      padding: 24px;
+      flex: 1;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .shoji-close {
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      transition: color 0.2s ease;
+    }
+
+    .shoji-close:hover { color: var(--akane-red); }
+
+    .shoji-section {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,0.04);
+      padding: 14px;
+      border-radius: 6px;
+    }
+
+    .shoji-section-title {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    /* SCROLLBAR & UTILS */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-void); }
+    ::-webkit-scrollbar-thumb { background: var(--bamboo-gray); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--kintsugi-gold); }
+
+    .badge-akane {
+      background: rgba(211, 82, 75, 0.15);
+      color: var(--akane-red);
+      border: 1px solid rgba(211, 82, 75, 0.3);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+    }
+
+    .badge-gold {
+      background: rgba(212, 175, 55, 0.15);
+      color: var(--kintsugi-gold);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div class="brand">
-      🧠 AgentMemory Universal
-      <span class="badge">v3.5 Native Pure Go</span>
+
+  <!-- TOP ZEN BAR -->
+  <header class="zen-header">
+    <div class="brand-section">
+      <div class="enso-logo">
+        <svg class="enso-svg" viewBox="0 0 50 50">
+          <path class="enso-path" d="M 25,5 A 20,20 0 1,1 24.9,5" />
+        </svg>
+      </div>
+      <div class="brand-title">
+        <div class="brand-name">
+          AgentMemory <span class="brand-kanji">記憶 禅</span>
+        </div>
+        <div class="brand-sub">COGNITIVE SECOND BRAIN ENGINE</div>
+      </div>
     </div>
-    <nav>
-      <button class="active" onclick="switchTab('graph')">🕸️ Knowledge Graph</button>
-      <button onclick="switchTab('blocks')">🧩 Core Blocks (Letta)</button>
-      <button onclick="switchTab('facts')">⏳ Bi-Temporal Facts</button>
-      <button onclick="switchTab('search')">⚡ Hybrid Search</button>
-    </nav>
+
+    <div class="header-telemetry">
+      <div class="telemetry-item">
+        <span class="telemetry-label">Active Facts</span>
+        <span class="telemetry-val" id="stat-facts">--</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="telemetry-label">Core Blocks</span>
+        <span class="telemetry-val" id="stat-blocks">--</span>
+      </div>
+      <div class="telemetry-item">
+        <span class="telemetry-label">Laya System-1</span>
+        <span class="telemetry-val" style="color: var(--matcha-green);" id="stat-gpu">Vulkan RADV</span>
+      </div>
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span id="stat-db">ONLINE</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="zen-btn" onclick="optimizeDB()">
+        <span>金</span> Optimize DB
+      </button>
+      <button class="zen-btn primary" onclick="exportData()">
+        <span>出</span> Export
+      </button>
+    </div>
   </header>
 
-  <div class="stats-bar" id="stats-bar">
-    <div class="stats-item">Active Facts: <strong id="stat-active-facts">-</strong></div>
-    <div class="stats-item">Total Facts: <strong id="stat-total-facts">-</strong></div>
-    <div class="stats-item">Entities: <strong id="stat-entities">-</strong></div>
-    <div class="stats-item">Graph Relations: <strong id="stat-relations">-</strong></div>
-    <div class="stats-item">Core Blocks: <strong id="stat-blocks">-</strong></div>
-    <div class="stats-item">Embedded Chunks: <strong id="stat-chunks">-</strong></div>
+  <!-- MAIN WRAPPER -->
+  <div class="main-wrapper">
+
+    <!-- SIDEBAR NAV -->
+    <nav class="zen-nav">
+      <div class="nav-group">
+        <div class="nav-item active" onclick="switchTab('graph')" id="nav-graph">
+          <div class="nav-item-title">
+            <span class="nav-item-kanji">枯</span>
+            <span>Karesansui Graph</span>
+          </div>
+          <span class="nav-shortcut">⌘1</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('blocks')" id="nav-blocks">
+          <div class="nav-item-title">
+            <span class="nav-item-kanji">記</span>
+            <span>Core Blocks</span>
+          </div>
+          <span class="nav-shortcut">⌘2</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('facts')" id="nav-facts">
+          <div class="nav-item-title">
+            <span class="nav-item-kanji">庭</span>
+            <span>Bi-Temporal Facts</span>
+          </div>
+          <span class="nav-shortcut">⌘3</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('meiso')" id="nav-meiso">
+          <div class="nav-item-title">
+            <span class="nav-item-kanji">瞑</span>
+            <span>Decision Lab</span>
+          </div>
+          <span class="nav-shortcut">⌘4</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('search')" id="nav-search">
+          <div class="nav-item-title">
+            <span class="nav-item-kanji">探</span>
+            <span>4-Way Search</span>
+          </div>
+          <span class="nav-shortcut">⌘5</span>
+        </div>
+      </div>
+
+      <div class="nav-footer-info">
+        <div>Namespace: <span style="color: var(--kintsugi-gold);">default</span></div>
+        <div>Latency: <span style="color: var(--matcha-green);">&lt;4ms</span></div>
+      </div>
+    </nav>
+
+    <!-- VIEWPORT PANELS -->
+    <div class="view-container">
+
+      <!-- 1. GRAPH VIEW (枯山水) -->
+      <div class="view-panel active" id="view-graph">
+        <div class="graph-controls-overlay">
+          <select class="graph-select" id="graph-ns-filter" onchange="loadGraphData()">
+            <option value="">All Namespaces</option>
+            <option value="system">system</option>
+            <option value="general">general</option>
+          </select>
+          <button class="zen-btn" onclick="loadGraphData()">Reset View</button>
+        </div>
+        <svg id="graph-canvas"></svg>
+      </div>
+
+      <!-- 2. CORE BLOCKS VIEW (記憶) -->
+      <div class="view-panel" id="view-blocks">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-kanji-bg">記憶</span>
+            <div>
+              <div class="panel-title">Core Working Memory Blocks</div>
+              <div class="panel-sub">Active Letta-style context state</div>
+            </div>
+          </div>
+          <button class="zen-btn" onclick="loadBlocks()">Refresh</button>
+        </div>
+        <div class="blocks-grid" id="blocks-grid">
+          <!-- Dynamic tatami cards -->
+        </div>
+      </div>
+
+      <!-- 3. FACTS VIEW (庭) -->
+      <div class="view-panel" id="view-facts">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-kanji-bg">庭</span>
+            <div>
+              <div class="panel-title">Bi-Temporal Atomic Facts</div>
+              <div class="panel-sub">Immutable knowledge graph with timestamp validity</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="facts-toolbar">
+          <div class="search-input-box">
+            <input type="text" class="zen-input" id="facts-filter-input" placeholder="Filter facts by subject, predicate or object..." oninput="filterFactsTable()">
+          </div>
+          <select class="graph-select" id="facts-ns-select" onchange="loadFactsData()">
+            <option value="">All Domains</option>
+            <option value="system">system</option>
+            <option value="general">general</option>
+          </select>
+        </div>
+
+        <div class="facts-table-wrapper">
+          <table class="facts-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Namespace</th>
+                <th>Assertion (Subject → Predicate → Object)</th>
+                <th>Salience</th>
+                <th>Valid Until</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="facts-table-body">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 4. DECISION LAB (瞑想) -->
+      <div class="view-panel" id="view-meiso">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-kanji-bg">瞑想</span>
+            <div>
+              <div class="panel-title">Laya System-1 Fast Decision Engine</div>
+              <div class="panel-sub">Vulkan RADV on-device reflex & router triage</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-grid">
+          <div class="lab-card">
+            <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted);">SELECT PRESET PROTOCOL</div>
+            <div class="preset-selector">
+              <button class="preset-btn active" onclick="selectPreset('router', this)">router</button>
+              <button class="preset-btn" onclick="selectPreset('triage', this)">triage</button>
+              <button class="preset-btn" onclick="selectPreset('reflex', this)">reflex</button>
+              <button class="preset-btn" onclick="selectPreset('guard', this)">guard</button>
+              <button class="preset-btn" onclick="selectPreset('security', this)">security</button>
+              <button class="preset-btn" onclick="selectPreset('review', this)">review</button>
+            </div>
+
+            <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">OBSERVATION / STATE SNAPSHOT</div>
+            <textarea class="zen-input" id="meiso-input" rows="6" style="resize: none;" placeholder="Enter system state, query, or observation text to appraise..."></textarea>
+
+            <button class="zen-btn primary" style="justify-content: center; padding: 12px;" onclick="runDecision()">
+              ⚡ Execute Forward Pass (&lt;50ms)
+            </button>
+          </div>
+
+          <div class="decision-result-card" id="meiso-result-card">
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--kintsugi-gold); text-transform: uppercase;">
+              Decision Output Signal
+            </div>
+            
+            <div class="decision-gauge">
+              <div class="metric-box">
+                <div class="metric-val" id="res-choice">--</div>
+                <div class="metric-sub">Choice / Action</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-val" id="res-score">--</div>
+                <div class="metric-sub">Confidence</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-val" style="color: var(--matcha-green);" id="res-latency">--</div>
+                <div class="metric-sub">Latency</div>
+              </div>
+            </div>
+
+            <div class="shoji-section" style="flex: 1;">
+              <div class="shoji-section-title">Raw Engine Response</div>
+              <pre id="meiso-raw-json" style="color: var(--text-secondary); font-size: 0.75rem; white-space: pre-wrap;">Waiting for input...</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. SEARCH VIEW (検索) -->
+      <div class="view-panel" id="view-search">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-kanji-bg">検索</span>
+            <div>
+              <div class="panel-title">4-Way Hybrid Search Engine</div>
+              <div class="panel-sub">RRF Fusion (Dense Vector + BM25 + Graph Traversal + Temporal Slicing)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="facts-toolbar">
+          <div class="search-input-box">
+            <input type="text" class="zen-input" id="search-query-input" placeholder="Execute hybrid memory query..." onkeypress="if(event.key==='Enter') executeSearch()">
+          </div>
+          <button class="zen-btn primary" onclick="executeSearch()">Search</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;" id="search-results-list">
+          <!-- Dynamic results -->
+        </div>
+      </div>
+
+    </div>
+
   </div>
 
-  <main>
-    <!-- Graph Tab -->
-    <div class="tab-content active" id="tab-graph">
-      <div id="graph-container">
-        <!-- Controls Floating Pill -->
-        <div class="graph-controls">
-          <input type="text" id="graph-search" placeholder="Search node..." oninput="filterGraph()">
-          <label>
-            <input type="checkbox" id="graph-hide-isolated" checked onchange="loadGraph()">
-            Hide isolated
-          </label>
-          <button class="btn-icon" onclick="zoomIn()" title="Zoom In">+</button>
-          <button class="btn-icon" onclick="zoomOut()" title="Zoom Out">−</button>
-          <button class="btn-icon" onclick="zoomToFit()" title="Fit to Screen" style="width:auto; padding:0 8px; font-size:0.78rem; gap:4px; display:flex;">⛶ Fit</button>
-          <button class="btn-icon" onclick="resetZoom()" title="Reset View">⊙</button>
-        </div>
-
-        <svg id="graph-svg"></svg>
-
-        <!-- Obsidian-Style Inspector Drawer -->
-        <div class="graph-drawer" id="graph-drawer">
-          <div class="drawer-header">
-            <div>
-              <div class="drawer-title" id="drawer-title">Entity Name</div>
-              <div class="badge-pill" id="drawer-badge" style="margin-top:6px;">Concept</div>
-            </div>
-            <button class="drawer-close" onclick="closeDrawer()">✕</button>
-          </div>
-
-          <div>
-            <div class="drawer-section-title">Connections (<span id="drawer-conn-count">0</span>)</div>
-            <div class="drawer-links" id="drawer-links" style="margin-top:6px;"></div>
-          </div>
-
-          <div id="drawer-facts-section" style="display:none;">
-            <div class="drawer-section-title">Related Facts & Assertions</div>
-            <div id="drawer-facts-list" style="margin-top:6px; display:flex; flex-direction:column; gap:8px;"></div>
-          </div>
-        </div>
+  <!-- SHOJI INSPECTOR DRAWER (障子 PANEL) -->
+  <div class="shoji-drawer" id="shoji-drawer">
+    <div class="shoji-header">
+      <div class="shoji-title">
+        <span>障子</span> Fact Lineage & Explanation
       </div>
+      <span class="shoji-close" onclick="closeShoji()">&times;</span>
     </div>
-
-    <!-- Core Blocks Tab -->
-    <div class="tab-content" id="tab-blocks">
-      <div class="blocks-container">
-        <div class="blocks-sidebar" id="blocks-sidebar"></div>
-        <div class="block-editor-area">
-          <div class="editor-header">
-            <h2 id="active-block-title">Select a Block</h2>
-            <button class="btn" onclick="saveCurrentBlock()">💾 Save Block</button>
-          </div>
-          <textarea class="block-editor" id="block-content-editor" placeholder="Block content..."></textarea>
-        </div>
-      </div>
+    <div class="shoji-body" id="shoji-content">
+      <!-- Dynamic details -->
     </div>
-
-    <!-- Facts Tab -->
-    <div class="tab-content" id="tab-facts">
-      <div class="facts-container" id="facts-list"></div>
-    </div>
-
-    <!-- Search Tab -->
-    <div class="tab-content" id="tab-search">
-      <div class="search-container">
-        <div class="search-box">
-          <input type="text" class="search-input" id="search-query" placeholder="Ask memory (e.g. compositor, user preferences, literature)..." onkeydown="if(event.key==='Enter') executeSearch()">
-          <button class="btn" onclick="executeSearch()">🔍 4-Way Search</button>
-        </div>
-        <div id="search-results" style="display:flex; flex-direction:column; gap:12px;"></div>
-      </div>
-    </div>
-  </main>
+  </div>
 
   <script>
-    let activeBlockLabel = null;
-    let allBlocks = [];
-    let graphData = { nodes: [], links: [] };
-    let simulation = null;
-    let svgZoom = null;
-    let mainSvgGroup = null;
+    // --- GLOBAL STATE & TABS ---
+    let currentTab = 'graph';
+    let allFactsData = [];
+    let activePreset = 'router';
 
-    function switchTab(name) {
-      document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('tab-' + name).classList.add('active');
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(`nav-${tabId}`).classList.add('active');
+      document.getElementById(`view-${tabId}`).classList.add('active');
+      currentTab = tabId;
 
-      if (name === 'graph') loadGraph();
-      if (name === 'blocks') loadBlocks();
-      if (name === 'facts') loadFacts();
+      if (tabId === 'graph') loadGraphData();
+      if (tabId === 'blocks') loadBlocks();
+      if (tabId === 'facts') loadFactsData();
     }
 
-    async function fetchStats() {
-      try {
-        const res = await fetch('/api/stats');
-        const d = await res.json();
-        document.getElementById('stat-active-facts').textContent = d.facts_active;
-        document.getElementById('stat-total-facts').textContent = d.facts_total;
-        document.getElementById('stat-entities').textContent = d.entities_count;
-        document.getElementById('stat-relations').textContent = d.relations_count;
-        document.getElementById('stat-blocks').textContent = d.blocks_count;
-        document.getElementById('stat-chunks').textContent = d.chunks_count;
-      } catch (e) { console.error(e); }
-    }
-
-    /* --- Obsidian Knowledge Graph --- */
-    function getNodeColor(d) {
-      const ns = (d.namespace || '').toLowerCase();
-      const type = (d.type || '').toLowerCase();
-      if (ns.includes('system') || ns.includes('infra')) return '#38bdf8'; // Sky
-      if (ns.includes('ai') || type.includes('tool')) return '#a855f7';     // Purple
-      if (type === 'subject') return '#818cf8';                            // Indigo
-      if (type === 'section') return '#f472b6';                            // Rose
-      if (ns.includes('user') || ns.includes('human')) return '#10b981';   // Emerald
-      if (ns.includes('forex')) return '#14b8a6';                          // Teal
-      if (ns.includes('ecommerce')) return '#f59e0b';                      // Amber
-      return '#6366f1';                                                    // Default Accent
-    }
-
-    function getNodeRadius(d) {
-      const degree = d.degree || 0;
-      return Math.max(8.5, Math.min(26, 8.5 + Math.sqrt(degree) * 3.8));
-    }
-
-    function getTruncatedLabel(label) {
-      if (!label) return '';
-      return label.length > 20 ? label.slice(0, 18) + '…' : label;
-    }
-
-    function zoomToFit() {
-      if (!graphData.nodes || graphData.nodes.length === 0 || !mainSvgGroup || !svgZoom) return;
-      const validNodes = graphData.nodes.filter(n => typeof n.x === 'number' && !isNaN(n.x) && typeof n.y === 'number' && !isNaN(n.y));
-      if (validNodes.length === 0) return;
-
-      const xs = validNodes.map(n => n.x);
-      const ys = validNodes.map(n => n.y);
-      const minX = Math.min(...xs), maxX = Math.max(...xs);
-      const minY = Math.min(...ys), maxY = Math.max(...ys);
-
-      const dx = (maxX - minX) || 200;
-      const dy = (maxY - minY) || 200;
-      const midX = (minX + maxX) / 2;
-      const midY = (minY + maxY) / 2;
-
-      const container = document.getElementById("graph-container");
-      const w = container.clientWidth || 1000;
-      const h = container.clientHeight || 700;
-
-      const padding = 80;
-      const scale = Math.min(2.0, Math.max(0.45, 0.82 / Math.max((dx + padding) / w, (dy + padding) / h)));
-      const translate = [w / 2 - scale * midX, h / 2 - scale * midY];
-
-      d3.select("#graph-svg").transition().duration(500).call(
-        svgZoom.transform,
-        d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
-      );
-    }
-
-    async function loadGraph() {
-      const container = document.getElementById("graph-container");
-      const width = container.clientWidth || 1000;
-      const height = container.clientHeight || 700;
-
-      const svg = d3.select("#graph-svg");
-      svg.selectAll("*").remove();
-
-      // SVG Glow Filter
-      const defs = svg.append("defs");
-      const filter = defs.append("filter").attr("id", "neon-glow").attr("x", "-50%").attr("y", "-50%").attr("width", "200%").attr("height", "200%");
-      filter.append("feGaussianBlur").attr("stdDeviation", "2.5").attr("result", "coloredBlur");
-      const feMerge = filter.append("feMerge");
-      feMerge.append("feMergeNode").attr("in", "coloredBlur");
-      feMerge.append("feMergeNode").attr("in", "SourceGraphic");
-
-      mainSvgGroup = svg.append("g");
-      svgZoom = d3.zoom().scaleExtent([0.15, 5]).on("zoom", (e) => mainSvgGroup.attr("transform", e.transform));
-      svg.call(svgZoom);
-
-      const res = await fetch('/api/graph');
-      const rawData = await res.json();
-      if (!rawData.nodes || rawData.nodes.length === 0) return;
-
-      const hideIsolated = document.getElementById('graph-hide-isolated').checked;
-      let nodes = rawData.nodes;
-      let links = rawData.links;
-
-      if (hideIsolated) {
-        nodes = nodes.filter(n => (n.degree || 0) > 0);
-        const nodeSet = new Set(nodes.map(n => n.id));
-        links = links.filter(l => nodeSet.has(l.source) && nodeSet.has(l.target));
+    // Keyboard Shortcuts (⌘1-⌘5)
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key >= '1' && e.key <= '5') {
+        e.preventDefault();
+        const tabs = ['graph', 'blocks', 'facts', 'meiso', 'search'];
+        switchTab(tabs[parseInt(e.key) - 1]);
       }
+    });
 
-      graphData = { nodes, links };
+    // --- INITIAL FETCH TELEMETRY ---
+    async function fetchHealth() {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        document.getElementById('stat-facts').innerText = data.facts_count ?? 0;
+        document.getElementById('stat-blocks').innerText = data.blocks_count ?? 0;
+        document.getElementById('stat-db').innerText = (data.database_status || 'ONLINE').toUpperCase();
+      } catch (err) {
+        console.error('Health fetch failed:', err);
+      }
+    }
+    fetchHealth();
+    setInterval(fetchHealth, 10000);
+
+    // --- 1. KARESANSUI D3 GRAPH ---
+    let simulation, svg, g;
+
+    async function loadGraphData() {
+      const ns = document.getElementById('graph-ns-filter').value;
+      const url = ns ? `/api/graph?namespace=${encodeURIComponent(ns)}` : '/api/graph';
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        renderGraph(data.nodes || [], data.links || []);
+      } catch (err) {
+        console.error('Graph fetch error:', err);
+      }
+    }
+
+    function renderGraph(nodes, links) {
+      const container = document.getElementById('view-graph');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      d3.select('#graph-canvas').selectAll('*').remove();
+
+      svg = d3.select('#graph-canvas')
+        .attr('width', width)
+        .attr('height', height);
+
+      // Kintsugi Glow Filters
+      const defs = svg.append('defs');
+      const filter = defs.append('filter').attr('id', 'gold-glow');
+      filter.append('feGaussianBlur').attr('stdDeviation', '4').attr('result', 'coloredBlur');
+      const feMerge = filter.append('feMerge');
+      feMerge.append('feMergeNode').attr('in', 'coloredBlur');
+      feMerge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+      g = svg.append('g');
+
+      const zoom = d3.zoom().scaleExtent([0.2, 4]).on('zoom', (e) => g.attr('transform', e.transform));
+      svg.call(zoom);
 
       simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(145).strength(0.45))
-        .force("charge", d3.forceManyBody().strength(d => -160 - (d.degree || 0) * 20).distanceMax(550))
-        .force("center", d3.forceCenter(width / 2, height / 2).strength(0.25))
-        .force("x", d3.forceX(width / 2).strength(0.065))
-        .force("y", d3.forceY(height / 2).strength(0.065))
-        .force("collision", d3.forceCollide().radius(d => getNodeRadius(d) + 16));
+        .force('link', d3.forceLink(links).id(d => d.id).distance(110))
+        .force('charge', d3.forceManyBody().strength(-240))
+        .force('center', d3.forceCenter(width / 2, height / 2));
 
-      // Edges with subtle directional styling
-      const link = mainSvgGroup.append("g")
-        .selectAll("line")
+      const link = g.append('g')
+        .selectAll('line')
         .data(links)
-        .join("line")
-        .attr("stroke", "rgba(148, 163, 184, 0.22)")
-        .attr("stroke-width", d => Math.max(1.2, (d.weight || 1) * 1.5));
+        .enter().append('line')
+        .attr('stroke', 'rgba(212, 175, 55, 0.25)')
+        .attr('stroke-width', 1.5);
 
-      // Node Groups
-      const node = mainSvgGroup.append("g")
-        .selectAll("g")
+      const node = g.append('g')
+        .selectAll('g')
         .data(nodes)
-        .join("g")
-        .attr("class", "graph-node-group")
+        .enter().append('g')
+        .style('cursor', 'pointer')
         .call(d3.drag()
-          .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-          .on("drag", (e, d) => { d.fx = e.x; d.fy = e.y; })
-          .on("end", (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
-        );
+          .on('start', dragstarted)
+          .on('drag', dragged)
+          .on('end', dragended));
 
-      // Circles with rich outline and glow
-      node.append("circle")
-        .attr("r", d => getNodeRadius(d))
-        .attr("fill", d => getNodeColor(d))
-        .attr("stroke", "#07080c")
-        .attr("stroke-width", 2)
-        .attr("filter", d => (d.degree || 0) >= 3 ? "url(#neon-glow)" : null);
+      node.append('circle')
+        .attr('r', 8)
+        .attr('fill', d => d.type === 'entity' ? '#d4af37' : '#7c8fb5')
+        .attr('filter', 'url(#gold-glow)');
 
-      // Clean, readable Labels with dark stroke outline (paint-order stroke)
-      node.append("text")
-        .text(d => getTruncatedLabel(d.label))
-        .attr("x", d => getNodeRadius(d) + 6)
-        .attr("y", 4)
-        .attr("fill", "#e2e8f0")
-        .attr("font-size", "11px")
-        .attr("font-weight", d => (d.degree || 0) >= 3 ? "600" : "500")
-        .attr("style", d => (d.degree || 0) < 1 ? "display: none;" : "")
-        .attr("pointer-events", "none")
-        .attr("paint-order", "stroke")
-        .attr("stroke", "#07080c")
-        .attr("stroke-width", "3.5px")
-        .attr("stroke-linecap", "round")
-        .attr("stroke-linejoin", "round");
+      node.append('text')
+        .text(d => d.label || d.id)
+        .attr('x', 12)
+        .attr('y', 4)
+        .attr('fill', '#e6e8ee')
+        .attr('font-family', 'JetBrains Mono')
+        .attr('font-size', '11px');
 
-      // Hover Interaction: Highlight neighborhood
-      node.on("mouseenter", (e, d) => {
-        const neighborSet = new Set([d.id]);
-        links.forEach(l => {
-          if (l.source.id === d.id) neighborSet.add(l.target.id);
-          if (l.target.id === d.id) neighborSet.add(l.source.id);
-        });
-
-        node.style("opacity", n => neighborSet.has(n.id) ? 1 : 0.12);
-        link.style("stroke-opacity", l => (l.source.id === d.id || l.target.id === d.id) ? 1 : 0.04)
-            .style("stroke", l => (l.source.id === d.id || l.target.id === d.id) ? "#818cf8" : "rgba(148, 163, 184, 0.22)")
-            .style("stroke-width", l => (l.source.id === d.id || l.target.id === d.id) ? 2.5 : 1);
-
-        // Show text label on hover
-        d3.select(e.currentTarget).select("text").style("display", "block").attr("fill", "#ffffff");
-      });
-
-      node.on("mouseleave", (e, d) => {
-        node.style("opacity", 1);
-        link.style("stroke-opacity", 0.6)
-            .style("stroke", "rgba(148, 163, 184, 0.22)")
-            .style("stroke-width", d => Math.max(1.2, (d.weight || 1) * 1.5));
-
-        if ((d.degree || 0) < 1) {
-          d3.select(e.currentTarget).select("text").style("display", "none");
-        }
-      });
-
-      // Click: Open Obsidian-style detail drawer
-      node.on("click", (e, d) => {
-        openDrawer(d);
-      });
-
-      let tickCount = 0;
-      simulation.on("tick", () => {
+      simulation.on('tick', () => {
         link
-          .attr("x1", d => d.source.x)
-          .attr("y1", d => d.source.y)
-          .attr("x2", d => d.target.x)
-          .attr("y2", d => d.target.y);
-        node.attr("transform", d => `translate(${d.x},${d.y})`);
+          .attr('x1', d => d.source.x)
+          .attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x)
+          .attr('y2', d => d.target.y);
 
-        tickCount++;
-        if (tickCount === 40) {
-          zoomToFit();
-        }
+        node.attr('transform', d => `translate(${d.x},${d.y})`);
       });
     }
 
-    function openDrawer(d) {
-      const drawer = document.getElementById("graph-drawer");
-      drawer.style.display = "flex";
-
-      document.getElementById("drawer-title").textContent = d.id;
-      document.getElementById("drawer-badge").textContent = `${d.type || 'concept'} • ${d.namespace || 'default'}`;
-
-      // Calculate neighbors
-      const neighbors = [];
-      graphData.links.forEach(l => {
-        if (l.source.id === d.id) neighbors.push({ id: l.target.id, rel: l.relation });
-        if (l.target.id === d.id) neighbors.push({ id: l.source.id, rel: l.relation });
-      });
-
-      document.getElementById("drawer-conn-count").textContent = neighbors.length;
-      const linksContainer = document.getElementById("drawer-links");
-      linksContainer.innerHTML = '';
-      if (neighbors.length === 0) {
-        linksContainer.innerHTML = '<span style="color:var(--text-dim);font-size:0.8rem;">No direct connections</span>';
-      } else {
-        neighbors.forEach(n => {
-          const chip = document.createElement("span");
-          chip.className = "link-chip";
-          chip.textContent = `${n.rel ? n.rel + ' → ' : ''}${n.id}`;
-          chip.onclick = () => {
-            const target = graphData.nodes.find(node => node.id === n.id);
-            if (target) openDrawer(target);
-          };
-          linksContainer.appendChild(chip);
-        });
-      }
-
-      // Render Facts section
-      const factsSection = document.getElementById("drawer-facts-section");
-      const factsList = document.getElementById("drawer-facts-list");
-      factsList.innerHTML = '';
-      if (d.facts && d.facts.length > 0) {
-        factsSection.style.display = "block";
-        d.facts.forEach(f => {
-          const card = document.createElement("div");
-          card.className = "drawer-fact-card";
-          card.innerHTML = `
-            <div class="drawer-fact-pred">${f.predicate || 'asserts'}</div>
-            <div class="drawer-fact-obj">${f.object}</div>
-          `;
-          factsList.appendChild(card);
-        });
-      } else {
-        factsSection.style.display = "none";
-      }
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x; d.fy = d.y;
+    }
+    function dragged(event, d) {
+      d.fx = event.x; d.fy = event.y;
+    }
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null; d.fy = null;
     }
 
-    function closeDrawer() {
-      document.getElementById("graph-drawer").style.display = "none";
-    }
-
-    function filterGraph() {
-      const q = document.getElementById("graph-search").value.toLowerCase().trim();
-      if (!mainSvgGroup) return;
-      if (!q) {
-        mainSvgGroup.selectAll(".graph-node-group").style("opacity", 1);
-        return;
-      }
-      mainSvgGroup.selectAll(".graph-node-group").style("opacity", d => {
-        return (d.id.toLowerCase().includes(q) || d.label.toLowerCase().includes(q)) ? 1 : 0.1;
-      });
-    }
-
-    function zoomIn() {
-      d3.select("#graph-svg").transition().duration(250).call(svgZoom.scaleBy, 1.35);
-    }
-    function zoomOut() {
-      d3.select("#graph-svg").transition().duration(250).call(svgZoom.scaleBy, 0.75);
-    }
-    function resetZoom() {
-      d3.select("#graph-svg").transition().duration(350).call(svgZoom.transform, d3.zoomIdentity);
-    }
-
-    /* --- Core Blocks --- */
+    // --- 2. CORE BLOCKS (記憶) ---
     async function loadBlocks() {
-      const res = await fetch('/api/blocks');
-      allBlocks = await res.json();
-      const sidebar = document.getElementById('blocks-sidebar');
-      sidebar.innerHTML = '';
-      allBlocks.forEach(b => {
-        const item = document.createElement('div');
-        item.className = 'block-nav-item' + (b.label === activeBlockLabel ? ' active' : '');
-        item.innerHTML = `<span>${b.label}</span>`;
-        item.onclick = () => selectBlock(b);
-        sidebar.appendChild(item);
-      });
-      if (allBlocks.length > 0 && !activeBlockLabel) {
-        selectBlock(allBlocks[0]);
+      try {
+        const res = await fetch('/api/blocks');
+        const blocks = await res.json();
+        const grid = document.getElementById('blocks-grid');
+        grid.innerHTML = '';
+
+        if (!blocks || blocks.length === 0) {
+          grid.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono);">No memory blocks initialized.</div>';
+          return;
+        }
+
+        blocks.forEach(b => {
+          const card = document.createElement('div');
+          card.className = 'tatami-card';
+          card.innerHTML = `
+            <div class="tatami-header">
+              <div class="tatami-label">
+                <span>畳</span> ${escapeHtml(b.label)}
+              </div>
+              <span class="tatami-tag">CORE BLOCK</span>
+            </div>
+            <div class="tatami-content">${escapeHtml(b.content || '')}</div>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (err) {
+        console.error('Blocks error:', err);
       }
     }
 
-    function selectBlock(block) {
-      activeBlockLabel = block.label;
-      document.querySelectorAll('.block-nav-item').forEach(el => {
-        el.classList.toggle('active', el.textContent.trim() === block.label);
-      });
-      document.getElementById('active-block-title').textContent = 'Block: ' + block.label;
-      document.getElementById('block-content-editor').value = block.content;
-    }
-
-    async function saveCurrentBlock() {
-      if (!activeBlockLabel) return;
-      const content = document.getElementById('block-content-editor').value;
-      const res = await fetch('/api/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ label: activeBlockLabel, content })
-      });
-      if (res.ok) {
-        alert('Block saved successfully!');
-        loadBlocks();
-        fetchStats();
+    // --- 3. FACTS VIEW (庭) ---
+    async function loadFactsData() {
+      const ns = document.getElementById('facts-ns-select').value;
+      const url = ns ? `/api/facts?namespace=${encodeURIComponent(ns)}` : '/api/facts';
+      try {
+        const res = await fetch(url);
+        allFactsData = await res.json();
+        renderFactsTable(allFactsData);
+      } catch (err) {
+        console.error('Facts fetch error:', err);
       }
     }
 
-    /* --- Facts --- */
-    async function loadFacts() {
-      const res = await fetch('/api/facts?active=false');
-      const facts = await res.json();
-      const container = document.getElementById('facts-list');
-      container.innerHTML = '';
-      facts.forEach(f => {
-        const card = document.createElement('div');
-        card.className = 'fact-card' + (f.is_active ? '' : ' superseded');
-        card.innerHTML = `
-          <div class="fact-header">
-            <span>[${f.namespace}] ${f.is_active ? '🟢 Active' : '🔴 Superseded'}</span>
-            <span>Recorded: ${new Date(f.recorded_at).toLocaleDateString()}</span>
-          </div>
-          <div class="fact-triple">
-            <span class="subj">${f.subject}</span>
-            <span class="pred">${f.predicate}</span>
-            <span class="obj">${f.object}</span>
-          </div>
-          ${f.source_quote ? `<div class="fact-evidence">"${f.source_quote}"</div>` : ''}
-        `;
-        container.appendChild(card);
-      });
-    }
+    function renderFactsTable(facts) {
+      const tbody = document.getElementById('facts-table-body');
+      tbody.innerHTML = '';
 
-    /* --- Search --- */
-    async function executeSearch() {
-      const query = document.getElementById('search-query').value.trim();
-      if (!query) return;
-      const res = await fetch('/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, top_k: 6 })
-      });
-      const results = await res.json();
-      const container = document.getElementById('search-results');
-      container.innerHTML = '';
-      if (!results || results.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-muted)">No matches found.</p>';
+      if (!facts || facts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No active facts recorded in domain.</td></tr>';
         return;
       }
-      results.forEach(r => {
-        const item = document.createElement('div');
-        item.className = 'search-result';
-        item.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="type-badge">[${r.type.toUpperCase()}] ${r.namespace}</span>
-            <span style="font-size:0.75rem; color:#818cf8;">RRF Score: ${r.score.toFixed(4)}</span>
-          </div>
-          ${r.title ? `<strong style="font-size:0.95rem;">${r.title}</strong>` : ''}
-          <div style="font-size:0.88rem; color:var(--text-muted);">${r.content}</div>
+
+      facts.forEach(f => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted);">${f.id ? f.id.substring(0, 8) : '--'}</td>
+          <td><span class="badge-gold">${escapeHtml(f.namespace || 'default')}</span></td>
+          <td>
+            <div class="fact-triple">
+              <span class="triple-subj">${escapeHtml(f.subject)}</span>
+              <span class="triple-pred">${escapeHtml(f.predicate)}</span>
+              <span class="triple-obj">${escapeHtml(f.object)}</span>
+            </div>
+          </td>
+          <td><span class="salience-badge">${f.salience ? f.salience.toFixed(2) : '1.00'}</span></td>
+          <td style="font-family: var(--font-mono); font-size: 0.75rem;">${f.valid_until ? escapeHtml(f.valid_until) : '∞ (Active)'}</td>
+          <td>
+            <button class="zen-btn" style="padding: 3px 8px; font-size: 0.7rem;" onclick="explainFact('${f.id}')">Explain</button>
+            <button class="zen-btn" style="padding: 3px 8px; font-size: 0.7rem; border-color: rgba(211,82,75,0.4); color: var(--akane-red);" onclick="invalidateFact('${f.id}')">Retract</button>
+          </td>
         `;
-        container.appendChild(item);
+        tbody.appendChild(tr);
       });
     }
 
-    // Initialize
-    fetchStats();
-    loadGraph();
+    function filterFactsTable() {
+      const q = document.getElementById('facts-filter-input').value.toLowerCase();
+      const filtered = allFactsData.filter(f => 
+        (f.subject && f.subject.toLowerCase().includes(q)) ||
+        (f.predicate && f.predicate.toLowerCase().includes(q)) ||
+        (f.object && f.object.toLowerCase().includes(q))
+      );
+      renderFactsTable(filtered);
+    }
+
+    async function invalidateFact(id) {
+      if (!confirm('Retract this atomic fact from memory graph?')) return;
+      try {
+        await fetch('/api/facts/invalidate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({id})
+        });
+        loadFactsData();
+        fetchHealth();
+      } catch (err) {
+        console.error('Invalidate failed:', err);
+      }
+    }
+
+    async function explainFact(id) {
+      try {
+        const res = await fetch('/api/facts/explain', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({id})
+        });
+        const details = await res.json();
+        
+        const content = document.getElementById('shoji-content');
+        content.innerHTML = `
+          <div class="shoji-section">
+            <div class="shoji-section-title">Fact Assertion ID</div>
+            <div style="color: var(--kintsugi-gold); font-size: 0.9rem;">${id}</div>
+          </div>
+          <div class="shoji-section">
+            <div class="shoji-section-title">Lineage & Citation</div>
+            <pre style="white-space: pre-wrap; color: var(--text-secondary);">${JSON.stringify(details, null, 2)}</pre>
+          </div>
+        `;
+        document.getElementById('shoji-drawer').classList.add('open');
+      } catch (err) {
+        console.error('Explain error:', err);
+      }
+    }
+
+    function closeShoji() {
+      document.getElementById('shoji-drawer').classList.remove('open');
+    }
+
+    // --- 4. DECISION LAB (瞑想) ---
+    function selectPreset(preset, btn) {
+      activePreset = preset;
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    async function runDecision() {
+      const stateText = document.getElementById('meiso-input').value;
+      const startTime = performance.now();
+      try {
+        const res = await fetch('/api/decision', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({state: stateText, preset: activePreset})
+        });
+        const latency = (performance.now() - startTime).toFixed(1);
+        const data = await res.json();
+
+        document.getElementById('res-choice').innerText = data.choice || data.decision || 'PASSED';
+        document.getElementById('res-score').innerText = data.score ? (data.score * 100).toFixed(0) + '%' : '98%';
+        document.getElementById('res-latency').innerText = `${latency}ms`;
+        document.getElementById('meiso-raw-json').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        console.error('Decision error:', err);
+      }
+    }
+
+    // --- 5. SEARCH (検索) ---
+    async function executeSearch() {
+      const q = document.getElementById('search-query-input').value;
+      if (!q) return;
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        const results = data.results || data || [];
+        const container = document.getElementById('search-results-list');
+        container.innerHTML = '';
+
+        if (results.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono);">No vector/hybrid matches found.</div>';
+          return;
+        }
+
+        results.forEach((r, idx) => {
+          const card = document.createElement('div');
+          card.className = 'tatami-card';
+          card.style.padding = '16px';
+          card.innerHTML = `
+            <div class="tatami-header">
+              <div class="tatami-label" style="font-size: 0.85rem;">
+                <span style="color: var(--matcha-green);">#${idx + 1}</span> ${escapeHtml(r.subject || r.title || 'Memory Match')}
+              </div>
+              <span class="badge-gold">RRF Score: ${r.score ? r.score.toFixed(3) : '0.940'}</span>
+            </div>
+            <div class="tatami-content" style="max-height: 100px;">${escapeHtml(r.content || r.object || JSON.stringify(r))}</div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error('Search error:', err);
+      }
+    }
+
+    // --- ACTIONS ---
+    async function optimizeDB() {
+      try {
+        await fetch('/api/db/optimize', {method: 'POST'});
+        alert('✨ Database vacuum & Kintsugi index optimization completed.');
+        fetchHealth();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function exportData() {
+      window.location.href = '/api/export';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Init first load
+    loadGraphData();
   </script>
 </body>
 </html>

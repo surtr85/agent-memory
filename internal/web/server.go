@@ -12,6 +12,7 @@ import (
 
 	"github.com/surtr85/agent-memory/internal/blocks"
 	"github.com/surtr85/agent-memory/internal/config"
+	"github.com/surtr85/agent-memory/internal/decision"
 	"github.com/surtr85/agent-memory/internal/retrieval"
 	"github.com/surtr85/agent-memory/internal/temporal"
 )
@@ -26,6 +27,7 @@ type Server struct {
 	blocks   *blocks.Manager
 	temporal *temporal.Registry
 	searcher *retrieval.Searcher
+	decision *decision.Engine
 	port     int
 }
 
@@ -40,6 +42,7 @@ func NewServer(db *sql.DB, cfg *config.Config, searcher *retrieval.Searcher, por
 		blocks:   blocks.NewManager(db),
 		temporal: temporal.NewRegistry(db),
 		searcher: searcher,
+		decision: decision.NewEngine(cfg),
 		port:     port,
 	}
 }
@@ -53,8 +56,13 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/stats", s.handleStats)
 	mux.HandleFunc("/api/blocks", s.handleBlocks)
 	mux.HandleFunc("/api/facts", s.handleFacts)
+	mux.HandleFunc("/api/facts/invalidate", s.handleInvalidateFact)
+	mux.HandleFunc("/api/facts/explain", s.handleExplainFact)
 	mux.HandleFunc("/api/graph", s.handleGraph)
 	mux.HandleFunc("/api/search", s.handleSearch)
+	mux.HandleFunc("/api/decision", s.handleDecision)
+	mux.HandleFunc("/api/db/optimize", s.handleOptimizeDB)
+	mux.HandleFunc("/api/export", s.handleExport)
 
 	// Embedded Static UI
 	sub, err := fs.Sub(assetsFS, "assets")
@@ -424,4 +432,125 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(results)
+}
+
+func (s *Server) handleInvalidateFact(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodPost {
+		http.Error(w, "POST required", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.ID == "" {
+		http.Error(w, "id is required", http.StatusBadRequest)
+		return
+	}
+
+	if err := s.temporal.InvalidateFact(req.ID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]any{"status": "ok", "invalidated_id": req.ID})
+}
+
+func (s *Server) handleExplainFact(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "id query parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	ev, err := s.temporal.ExplainFact(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(ev)
+}
+
+func (s *Server) handleDecision(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodPost {
+		http.Error(w, "POST required", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		State  string `json:"state"`
+		Preset string `json:"preset"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.State == "" {
+		http.Error(w, "state is required", http.StatusBadRequest)
+		return
+	}
+	if req.Preset == "" {
+		req.Preset = "router"
+	}
+
+	start := time.Now()
+	res, err := s.decision.Decide(r.Context(), req.State, req.Preset)
+	elapsed := time.Since(start)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]any{
+		"result":     res,
+		"preset":     req.Preset,
+		"latency_ms": float64(elapsed.Microseconds()) / 1000.0,
+		"engine":     "laya-system1-vulkan",
+	})
+}
+
+func (s *Server) handleOptimizeDB(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodPost {
+		http.Error(w, "POST required", http.StatusMethodNotAllowed)
+		return
+	}
+
+	start := time.Now()
+	_, err1 := s.db.Exec(`VACUUM;`)
+	_, err2 := s.db.Exec(`PRAGMA optimize;`)
+	elapsed := time.Since(start)
+
+	if err1 != nil || err2 != nil {
+		http.Error(w, "optimization failed", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":     "optimized",
+		"latency_ms": float64(elapsed.Microseconds()) / 1000.0,
+	})
+}
+
+func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=agent-memory-%s.json", time.Now().Format("20060102-150405")))
+
+	blocksList, _ := s.blocks.ListBlocks()
+	factsList, _ := s.temporal.GetActiveFacts("")
+
+	json.NewEncoder(w).Encode(map[string]any{
+		"exported_at":  time.Now().UTC().Format(time.RFC3339),
+		"version":      "3.5.0",
+		"blocks":       blocksList,
+		"active_facts": factsList,
+	})
 }
