@@ -143,7 +143,30 @@ I am Amadeus / OmniMem, an autonomous, precise AI systems architect. Zero fluff.
 $ agent-memory fact add system DesktopEnvironment uses_compositor Niri "Migrated to Niri"
 Fact recorded successfully [ID: 197c...] # Automatically supersedes previous compositor!
 
-# 6. 4-Way Hybrid Search
+# 6. Knowledge Graph & Entity Inspection
+$ agent-memory inspect Sajjad
+═══════════════════════════════════════════════════════════════
+  Entity:    Sajjad
+  Type:      person
+  Namespace: user
+═══════════════════════════════════════════════════════════════
+
+Knowledge Graph Relations:
+  ──[uses (w:1.0)]──> NixOS
+  ──[prefers (w:1.0)]──> Niri
+  ──[pairs_with (w:1.0)]──> Amadeus
+
+Active Atomic Facts:
+  • [user] (Sajjad) --[prefers_compositor]--> (Niri)
+  • [user] (Sajjad) --[prefers_editor]--> (Neovim)
+
+# 7. Fact Listing & Fuzzy Search
+$ agent-memory fact list --search "nixos" --limit 5
+
+# 8. Memory Statistics Breakdown
+$ agent-memory stats
+
+# 9. 4-Way Hybrid Search
 $ agent-memory search "DesktopEnvironment" --ns system
 Search Results (1 matches for "DesktopEnvironment"):
 [1] Type: fact | NS: system | Score: 0.0164

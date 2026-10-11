@@ -22,9 +22,9 @@ This upgrade directly addresses the architectural bottlenecks identified during 
    - Enforce hard budget (<500 tokens) on `memory_get_bootstrap` by categorizing blocks into *Core Bootstrap* (`persona`, `human`, `environment`, `session_state`, `alignment`) vs *Domain Knowledge* (`adult`, `konkur_1405`, `qrose_shop_protocols`, etc.).
 3. **Multilingual & Persian Fact Extraction**:
    - Modernize the observation extraction pipeline with Unicode regex (`\p{L}`) and structured fact extraction.
-4. **Embedded Visual Web Dashboard & Knowledge Graph**:
-   - Introduce `agent-memory ui` command serving a zero-dependency, high-performance dark-mode web application directly from Go binary via `//go:embed`.
-   - Feature an interactive Force-Directed Knowledge Graph canvas, Letta block live editor, bi-temporal fact timeline, and real-time hybrid search tester.
+4. **Rich CLI Knowledge Tooling & Zero-Bloat Pure-Go Core**:
+   - Dropped fragile web visual dashboard in favor of instant, terminal-native CLI tools (`agent-memory inspect <entity>`, `agent-memory fact list --search`, `agent-memory stats`).
+   - Keeps the binary 100% focused on MCP, terminal pipelines, and sub-millisecond local execution without web runtime bloat. bi-temporal fact timeline, and real-time hybrid search tester.
 
 ---
 
